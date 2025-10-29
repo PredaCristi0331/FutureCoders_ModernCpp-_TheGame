@@ -1,7 +1,5 @@
 #include "GameTable.h"
-#include <list>
-#include <algorithm>
-#include <iterator>
+#include "TheGame.h"
 
 GameTable::GameTable(int nrGamer):
 	m_nrGamer(nrGamer)

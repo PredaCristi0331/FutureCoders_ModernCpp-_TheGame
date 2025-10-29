@@ -3,7 +3,7 @@
 #include "Jucator.h"
 #include "Card.h"
 #include <vector>
-#include <list>
+
 class GameTable
 {
 private:
