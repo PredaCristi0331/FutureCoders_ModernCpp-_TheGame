@@ -1,11 +1,12 @@
-#include <QApplication>
-#include "loginwindow.h"
+//#include <QApplication>
+//#include "loginwindow.h"
+#include <iostream>
+int main() {
+    //QApplication app(argc, argv);
 
-int main(int argc, char* argv[]) {
-    QApplication app(argc, argv);
+    //LoginWindow window;
+    //window.show();
 
-    LoginWindow window;
-    window.show();
-
-    return app.exec();
+    //return app.exec();
+    return 0;
 }

@@ -10,7 +10,7 @@ void GameTable::AddGamer()
 {
 	if (m_nrGamer < 2 || m_nrGamer>5)
 	{
-		std::cout << "Not valid gamer number. Please select an other gamer number between 2 and 5.";
+		std::cout << "Not valid gamer number. The game finished.";
 		return;
 	}
 	Jucator gamer;
@@ -38,7 +38,9 @@ void GameTable::MixingDeckCards()
 	int i;
 	std::cin >> i;
 	for (int j = i; j < 90; j++) {
-		int k = 2;
+		int k;
+		std::cout << "Please enter a number for mixing the cards!\n";
+		std::cin >> k;
 		std::swap(m_deckCards[k], m_deckCards[j+5]);
 		k++;
 	}

@@ -7,6 +7,7 @@ private:
 
 public:
 	TheGame();
+	void StartTheGame();
 	void Rund();
 };
 
