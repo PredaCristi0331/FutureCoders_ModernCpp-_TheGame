@@ -1,9 +1,23 @@
 #include "GameTable.h"
 #include "TheGame.h"
 
+GameTable::GameTable()
+{
+}
+
 GameTable::GameTable(int nrGamer):
 	m_nrGamer(nrGamer)
 {
+}
+
+void GameTable::SetNrGamer(int nrGamer)
+{
+	m_nrGamer = nrGamer;
+}
+
+int GameTable::GetNrGame()
+{
+	return m_nrGamer;
 }
 
 void GameTable::AddGamer()
@@ -63,4 +77,60 @@ void GameTable::IssuerCard()
 		}
 		else k++;
 	}
+}
+
+Card GameTable::GetLastCardFromIncreasingFirst()
+{
+	return m_increasingFirst.back();
+}
+
+Card GameTable::GetLastCardFromIncreasingSecond()
+{
+	return m_increasingSecond.back();
+}
+
+Card GameTable::GetLastCardFromDecreasingFirst()
+{
+	return m_decreasingFirst.back();
+}
+
+Card GameTable::GetLastCardFromDecreasingSecond()
+{
+	return m_decreasingSecond.back();
+}
+
+void GameTable::ShowCardsGamer(int nrGamer)
+{
+	Jucator j = m_Gamers[nrGamer];
+	j.ShowCards();
+}
+
+std::vector<Card> GameTable::GetCardsGamer(int nrGamer)
+{
+	return m_Gamers[nrGamer].GetCards();
+}
+
+void GameTable::PushIncreasingFirst(Card card)
+{
+	m_increasingFirst.push_back(card);
+}
+
+void GameTable::PushIncreasingSecond(Card card)
+{
+	m_increasingSecond.push_back(card);
+}
+
+void GameTable::PushDecreasingFirst(Card card)
+{
+	m_decreasingFirst.push_back(card);
+}
+
+void GameTable::PushDecreasingSecond(Card card)
+{
+	m_decreasingSecond.push_back(card);
+}
+
+Jucator GameTable::GetGamer(int nrGamer)
+{
+	return m_Gamers[nrGamer];
 }

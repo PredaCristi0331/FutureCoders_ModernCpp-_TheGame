@@ -15,10 +15,24 @@ private:
 	std::vector<Card>m_decreasingFirst;
 	std::vector<Card>m_decreasingSecond;
 public:
+	GameTable();
 	GameTable(int nrGamer);
+	void SetNrGamer(int nrGamer);
+	int GetNrGame();
 	void AddGamer();
 	void AddInitialCards();
 	void MixingDeckCards();
 	void IssuerCard();
+	Card GetLastCardFromIncreasingFirst();
+	Card GetLastCardFromIncreasingSecond();
+	Card GetLastCardFromDecreasingFirst();
+	Card GetLastCardFromDecreasingSecond();
+	void ShowCardsGamer(int nrGamer);
+	std::vector<Card> GetCardsGamer(int nrGamer);
+	void PushIncreasingFirst(Card card);
+	void PushIncreasingSecond(Card card);
+	void PushDecreasingFirst(Card card);
+	void PushDecreasingSecond(Card card);
+	Jucator GetGamer(int nrGamer);
 };
 

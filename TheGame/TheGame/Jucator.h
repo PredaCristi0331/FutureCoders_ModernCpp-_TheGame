@@ -11,6 +11,7 @@ public:
 	Jucator();
 	void AddCard(Card cardDrawn);
 	std::vector<Card> GetCards();
-	Card CardLaidDown(Card card);
+	void ShowCards();
+	Card CardLaidDown(int card);
 };
 

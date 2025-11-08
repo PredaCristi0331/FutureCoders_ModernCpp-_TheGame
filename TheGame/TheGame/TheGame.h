@@ -4,7 +4,7 @@
 class TheGame
 {
 private:
-
+	GameTable m_gameTable;
 public:
 	TheGame();
 	void StartTheGame();
