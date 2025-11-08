@@ -5,9 +5,9 @@ GameTable::GameTable()
 {
 }
 
-GameTable::GameTable(int nrGamer):
-	m_nrGamer(nrGamer)
+GameTable::GameTable(int nrGamer)
 {
+	m_nrGamer = nrGamer;
 }
 
 void GameTable::SetNrGamer(int nrGamer)
@@ -133,4 +133,39 @@ void GameTable::PushDecreasingSecond(Card card)
 Jucator GameTable::GetGamer(int nrGamer)
 {
 	return m_Gamers[nrGamer];
+}
+
+void GameTable::PushCard(Card card, int nrGamer)
+{
+	m_Gamers[nrGamer].AddCard(card);
+}
+
+void GameTable::RemoveDeckCardsLast()
+{
+	m_deckCards.pop_back();
+}
+
+Card GameTable::DeckCardsLast()
+{
+	return m_deckCards.back();
+}
+
+void GameTable::RemoveLastIncreasingFirst()
+{
+	m_increasingFirst.pop_back();
+}
+
+void GameTable::RemoveLastIncreasingSecond()
+{
+	m_increasingSecond.pop_back();
+}
+
+void GameTable::RemoveLastDecreasingFirst()
+{
+	m_decreasingFirst.pop_back();
+}
+
+void GameTable::RemoveLastDecreasingSecond()
+{
+	m_decreasingSecond.pop_back();
 }

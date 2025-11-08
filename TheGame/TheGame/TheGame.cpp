@@ -36,14 +36,84 @@ void TheGame::Rund()
 		std::cin >> nrCard2;
 		std::cout << "Please choose the stack of the cards where you want to put, and enter the number of the stack!\n";
 		std::cin >> stack2;
-		if (stack1 == 1) m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
-		if (stack1 == 2) m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
-		if (stack1 == 3) m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
-		if (stack1 == 4) m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+		if (stack1 == 1) 
+			if (stack1 > m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber())
+			{
+				m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+			}
+			else {
+				if (stack1 == m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber() - 10) {
+					m_gameTable.RemoveLastIncreasingFirst();
+					m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+				}
+			}
 
-		if (stack2 == 1) m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
-		if (stack2 == 2) m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
-		if (stack2 == 3) m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
-		if (stack2 == 4) m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+		if (stack1 == 2) 
+			if (stack1 > m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber()) {
+				m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+			}
+			else if (stack1 == m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber() - 10) {
+				m_gameTable.RemoveLastIncreasingSecond();
+				m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+			}
+		if (stack1 == 3) 
+			if (stack1 > m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber())
+			{
+				m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+			}
+			else if (stack1 == m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() - 10) {
+				m_gameTable.RemoveLastDecreasingFirst();
+				m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+			}
+		if (stack1 == 4) 
+			if (stack1 > m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber()) {
+				m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+			}else if (stack1 == m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() - 10) {
+				m_gameTable.RemoveLastDecreasingSecond();
+				m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard1));
+			}
+
+			if (stack2 == 1)
+				if (stack2 > m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber())
+				{
+					m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+				}
+				else {
+					if (stack2 == m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber() - 10) {
+						m_gameTable.RemoveLastIncreasingFirst();
+						m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+					}
+				}
+
+			if (stack2 == 2)
+				if (stack2 > m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber()) {
+					m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+				}
+				else if (stack2 == m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber() - 10) {
+					m_gameTable.RemoveLastIncreasingSecond();
+					m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+				}
+			if (stack2 == 3)
+				if (stack2 > m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber())
+				{
+					m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+				}
+				else if (stack2 == m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() - 10) {
+					m_gameTable.RemoveLastDecreasingFirst();
+					m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+				}
+			if (stack2 == 4)
+				if (stack2 > m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber()) {
+					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+				}
+				else if (stack2 == m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() - 10) {
+					m_gameTable.RemoveLastDecreasingSecond();
+					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(nrCard2));
+				}
+
+		m_gameTable.PushCard(m_gameTable.DeckCardsLast(), i);
+		m_gameTable.RemoveDeckCardsLast();
+		m_gameTable.PushCard(m_gameTable.DeckCardsLast(), i);
+		m_gameTable.RemoveDeckCardsLast();
 	}
 }
