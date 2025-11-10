@@ -44,6 +44,7 @@ public:
 
 	void RemoveDeckCardsLast();
 	Card DeckCardsLast();
+	int SizeDeckCards();
 
 	void RemoveLastIncreasingFirst();
 	void RemoveLastIncreasingSecond();

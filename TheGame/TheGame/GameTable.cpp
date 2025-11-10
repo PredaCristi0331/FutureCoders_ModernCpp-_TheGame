@@ -150,6 +150,11 @@ Card GameTable::DeckCardsLast()
 	return m_deckCards.back();
 }
 
+int GameTable::SizeDeckCards()
+{
+	return m_deckCards.size();
+}
+
 void GameTable::RemoveLastIncreasingFirst()
 {
 	m_increasingFirst.pop_back();

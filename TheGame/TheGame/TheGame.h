@@ -8,7 +8,9 @@ private:
 public:
 	TheGame();
 	void StartTheGame();
-	void RundWithDeckCards();
-	void RundWithoutDeckCards();
+	void ShowLastCardsFromStacks();
+	void Rund();
+	void FinalGame(bool status);
+	bool Lost();
 };
 

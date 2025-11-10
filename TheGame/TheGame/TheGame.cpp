@@ -16,24 +16,39 @@ void TheGame::StartTheGame()
 	m_gameTable.IssuerCard();
 }
 
-void TheGame::RundWithDeckCards()
+void TheGame::ShowLastCardsFromStacks()
+{
+	std::cout << "The last cards of the stacks: \n";
+	std::cout << m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber() << "\n";
+	std::cout << m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber() << "\n";
+	std::cout << m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() << "\n";
+	std::cout << m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() << "\n";
+}
+
+void TheGame::Rund()
 {
 	for (int i = 0; i < m_gameTable.GetNrGame(); i++) {
-		std::cout << "The last cards of the stacks: \n";
-		std::cout << m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber() << "\n";
-		std::cout << m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber() << "\n";
-		std::cout << m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() << "\n";
-		std::cout << m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() << "\n";
+		ShowLastCardsFromStacks();
 		m_gameTable.ShowCardsGamer(i);
 		std::vector<Card>cards = m_gameTable.GetCardsGamer(i);
-		std::cout << "Please enter how many cards do you want to put! (It must be minim 2 cards!\n";
+		if (m_gameTable.SizeDeckCards() != 0)
+		{
+			std::cout << "Please enter how many cards do you want to put! (It must be minim 2 cards!)\n";
+		}else std::cout << "Please enter how many cards do you want to put! (It must be minim 1 cards!)\n";
 		int nrCards = 0;
-		while (nrCards < 2) {
+		if (m_gameTable.SizeDeckCards() != 0)
+		{
+			while (nrCards < 2) {
+				std::cin >> nrCards;
+				if (nrCards < 2) std::cout << "Invalid number of cards. Please enter another number which is minim 2.\n";
+			}
+		}else while (nrCards < 1) {
 			std::cin >> nrCards;
-			if (nrCards < 2) std::cout << "Invalid number of cards. Please enter another number which is minim 2.\n";
+			if (nrCards < 1) std::cout << "Invalid number of cards. Please enter another number which is minim 2.\n";
 		}
+
 		for (int i = 0; i < nrCards; i++) {
-			std::cout << std::endl << "Please choose a card, and enter the number of the card!\n";
+			std::cout << std::endl << "Please choose a card and enter the number of the card!\n";
 			int cardSelect;
 			std::cin >> cardSelect;
 			std::cout << "Please choose the stack of the cards where you want to put, and enter the number of the stack!\n";
@@ -77,14 +92,24 @@ void TheGame::RundWithDeckCards()
 					m_gameTable.RemoveLastDecreasingSecond();
 					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
-
-			m_gameTable.PushCard(m_gameTable.DeckCardsLast(), i);
-			m_gameTable.RemoveDeckCardsLast();
+			if (m_gameTable.SizeDeckCards() != 0)
+			{
+				m_gameTable.PushCard(m_gameTable.DeckCardsLast(), i);
+				m_gameTable.RemoveDeckCardsLast();
+			}
 		}
 	}
 }
 
-void TheGame::RundWithoutDeckCards()
+void TheGame::FinalGame(bool status)
 {
+	std::cout << "The game finished!\n";
+	if (status == true)
+		std::cout << "Congratulations! You won!";
+	else std::cout << "You lost!";
+}
 
+bool TheGame::Lost()
+{
+	return false;
 }
