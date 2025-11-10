@@ -1,7 +1,7 @@
 #include "GameTable.h"
 #include "TheGame.h"
 
-GameTable::GameTable()
+GameTable::GameTable():m_nrGamer(0)
 {
 }
 

@@ -8,6 +8,7 @@ private:
 public:
 	TheGame();
 	void StartTheGame();
-	void Rund();
+	void RundWithDeckCards();
+	void RundWithoutDeckCards();
 };
 
