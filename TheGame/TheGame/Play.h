@@ -3,6 +3,5 @@ class Play
 {
 public:
 	Play();
-
 };
 

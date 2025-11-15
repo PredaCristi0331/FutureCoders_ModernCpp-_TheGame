@@ -4,6 +4,12 @@ TheGame::TheGame()
 {
 }
 
+void TheGame::SetLost()
+{
+	m_lostGame = true;
+}
+
+
 void TheGame::StartTheGame()
 {
 	std::cout << "Please enter the number of the gamers!\n";
@@ -40,11 +46,23 @@ void TheGame::Rund()
 		{
 			while (nrCards < 2) {
 				std::cin >> nrCards;
-				if (nrCards < 2) std::cout << "Invalid number of cards. Please enter another number which is minim 2.\n";
+				if (nrCards < 2) {
+					std::cout << "Invalid number of cards. You don't have enough cards.\n";
+					bool lost = Lost();
+					FinalGame(lost);
+					SetLost();
+					return;
+				}
 			}
 		}else while (nrCards < 1) {
 			std::cin >> nrCards;
-			if (nrCards < 1) std::cout << "Invalid number of cards. Please enter another number which is minim 2.\n";
+			if (nrCards < 1) {
+				std::cout << "Invalid number of cards. You don't have enough cards.\n";
+				bool lost = Lost();
+				FinalGame(lost);
+				SetLost();
+				return;
+			}
 		}
 
 		for (int i = 0; i < nrCards; i++) {
@@ -112,4 +130,9 @@ void TheGame::FinalGame(bool status)
 bool TheGame::Lost()
 {
 	return false;
+}
+
+bool TheGame::GetLostGame()
+{
+	return m_lostGame;
 }

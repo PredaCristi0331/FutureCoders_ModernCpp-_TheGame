@@ -2,8 +2,8 @@
 #include "Card.h"
 #include "Jucator.h"
 #include "TheGame.h"
+#include "Play.h"
 int main() {
-	TheGame game;
-	game.StartTheGame();
+	Play play();
 	return 0;
 }

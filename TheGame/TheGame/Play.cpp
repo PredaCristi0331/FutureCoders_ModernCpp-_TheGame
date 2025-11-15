@@ -5,5 +5,8 @@ Play::Play()
 {
 	TheGame game;
 	game.StartTheGame();
-	
+	game.Rund();
+	if(game.GetLostGame()==false)
+		game.FinalGame(false);
 }
+
