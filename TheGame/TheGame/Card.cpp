@@ -1,4 +1,6 @@
 #include "Card.h"
+//module Card;
+//using game::Card;
 
 Card::Card(int m_card):
 	m_Card(m_card)
