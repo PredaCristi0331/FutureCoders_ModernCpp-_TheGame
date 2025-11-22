@@ -42,6 +42,12 @@
     <ClCompile Include="Jucator.cppm">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="TheGame.cppm">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Play.cppm">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Card.h">

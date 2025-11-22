@@ -143,8 +143,10 @@
     <ClCompile Include="Jucator.cpp" />
     <ClCompile Include="Jucator.cppm" />
     <ClCompile Include="Play.cpp" />
+    <ClCompile Include="Play.cppm" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="TheGame.cpp" />
+    <ClCompile Include="TheGame.cppm" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Card.h" />
