@@ -22,7 +22,7 @@ struct GameSession {
 struct PlayerStatistics {
     int id;
     int userId;
-    int gameSessionId;
+    int gameId;
     int cardsInHandEnd;
 	int performanceScore;
     int wasHost;
@@ -31,9 +31,9 @@ struct PlayerStatistics {
 struct UserProfileStats {
     int userId;
     std::string username;
-    int totalGamesPlayed;
-    int totalWins;
+    int totalGames;
+    int gamesWon;
     double winRate;
 	double avgCardsLostGames;
-	double averagePerformance;
+	double avgPerformance;
 };

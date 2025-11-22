@@ -1,31 +1,36 @@
 #pragma once
+
 #include <string>
-#include <vector>
-
-struct User {
-    int id;
-    std::string username;
-    std::string password;
-};
-
-struct Game {
-    int id;
-    std::string player;
-    int score;
-    std::string date;
-};
+#include <optional>
+#include "db/sqlite_orm/sqlite_orm.h"
+#include "Statistics.h"
 
 class DatabaseManager {
-private:
-    std::string databasePath;
-
 public:
-    DatabaseManager(const std::string& dbPath);
+	explicit DatabaseManager(const std::string& dbPath = "thegame.db");
 
-    void addUser(const std::string& username, const std::string& password);
-    bool userExists(const std::string& username);
+	void init();
 
-    void addGameResult(const std::string& player, int score);
-    std::vector<Game> getGamesByUser(const std::string& username);
+	int createUser(const std::string& username, const std::string& passwordHash);
+	std::optional<User> getUserByName(const std::string& username);
+
+    int createGameSession(int numPlayers, int customLevel);
+    void finishGame(int gameId, bool teamWon, int cardsLeftDeck);
+
+    void addPlayerGameStats(int gameId,
+        int userId,
+        int cardsInHandEnd,
+        int performanceScore,
+        bool wasHost);
+
+    std::optional<UserProfileStats> getUserProfile(int userId);
+private:
+    using Storage = decltype(sqlite_orm::make_storage(
+        "",
+        sqlite_orm::make_table("users"),
+        sqlite_orm::make_table("game_sessions"),
+        sqlite_orm::make_table("player_game_stats")
+    ));
+	Storage storage;
 };
 
