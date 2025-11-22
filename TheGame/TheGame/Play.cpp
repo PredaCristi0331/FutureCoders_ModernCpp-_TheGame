@@ -1,5 +1,9 @@
-#include "Play.h"
-#include "TheGame.h"
+//#include "Play.h"
+//#include "TheGame.h"
+
+module Play;
+export import TheGame;
+using namespace game;
 
 Play::Play()
 {

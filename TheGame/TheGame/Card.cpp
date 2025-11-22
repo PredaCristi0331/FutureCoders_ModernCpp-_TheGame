@@ -1,8 +1,8 @@
-#include "Card.h"
-//module Card;
-//using game::Card;
+//#include "Card.h"
+module Card;
+using game::Card;
 
-Card::Card(int m_card):
+game::Card::Card(int m_card):
 	m_Card(m_card)
 {
 	if (m_card == 1 || m_card == 100)

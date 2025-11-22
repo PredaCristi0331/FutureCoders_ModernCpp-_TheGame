@@ -1,5 +1,8 @@
-#include "GameTable.h"
-#include "TheGame.h"
+//#include "GameTable.h"
+//#include "TheGame.h"
+
+module GameTable;
+using namespace game;
 
 GameTable::GameTable():m_nrGamer(0)
 {

@@ -1,4 +1,7 @@
-#include "TheGame.h"
+//#include "TheGame.h"
+
+module TheGame;
+using namespace game;
 
 TheGame::TheGame()
 {

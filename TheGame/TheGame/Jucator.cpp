@@ -1,4 +1,7 @@
-#include "Jucator.h"
+//#include "Jucator.h"
+module Jucator;
+using namespace game;
+import std;
 
 Jucator::Jucator()
 {
