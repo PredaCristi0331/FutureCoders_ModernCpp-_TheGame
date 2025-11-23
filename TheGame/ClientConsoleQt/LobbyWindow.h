@@ -56,5 +56,5 @@ private:
     void applyStyles();
     void connectSignals();
     void updateStatus(const QString& message, const QString& color);
-};
+};//commit
 
