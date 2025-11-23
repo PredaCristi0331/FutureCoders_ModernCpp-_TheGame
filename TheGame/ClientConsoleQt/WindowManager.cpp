@@ -5,6 +5,8 @@
 // #include "ProfileWindow.h"
 // #include "GameBoardWindow.h"
 
+#include "GameClient.h"
+
 WindowManager::WindowManager(QWidget* parent)
     : QStackedWidget(parent)
     , loginWindow(nullptr)
@@ -12,6 +14,8 @@ WindowManager::WindowManager(QWidget* parent)
     , profileWindow(nullptr)
     , gameBoardWindow(nullptr)
 {
+    // Initialize GameClient with default URL (can be configurable)
+    gameClient = new GameClient("http://localhost:18080", this);
     initWindows();
 }
 
@@ -21,7 +25,7 @@ WindowManager::~WindowManager() {
 
 void WindowManager::initWindows() {
     // Creează LoginWindow
-    loginWindow = new LoginWindow(this);
+    loginWindow = new LoginWindow(gameClient, this);
     addWidget(loginWindow);
     connect(loginWindow, &LoginWindow::loginSuccessful, 
             this, &WindowManager::showLobbyWindow);
