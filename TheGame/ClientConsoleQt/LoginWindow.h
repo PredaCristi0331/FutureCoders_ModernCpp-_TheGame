@@ -9,11 +9,13 @@
 #include <QSet>
 #include <QString>
 
+class GameClient;
+
 class LoginWindow : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LoginWindow(QWidget* parent = nullptr);
+    explicit LoginWindow(GameClient* client, QWidget* parent = nullptr);
     ~LoginWindow();
 
 signals:
@@ -38,9 +40,10 @@ private:
     bool validateUsername(const QString& username);
     bool mockLogin(const QString& username);
     bool mockRegister(const QString& username);
+    void sendRequest(const QString& endpoint);
+    GameClient* gameClient;
     
     // Design
     void setupUI();
     void applyStyles();
 };
-

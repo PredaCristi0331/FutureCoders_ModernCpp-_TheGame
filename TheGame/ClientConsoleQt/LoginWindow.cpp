@@ -4,10 +4,13 @@
 #include <QFont>
 #include <QPalette>
 
-// Inițializare date mock
+#include "GameClient.h"
+
+
 QSet<QString> LoginWindow::mockUsers;
 
-LoginWindow::LoginWindow(QWidget* parent) : QWidget(parent) {
+LoginWindow::LoginWindow(GameClient* client, QWidget* parent) 
+    : QWidget(parent), gameClient(client) {
     initializeMockUsers();
     setupUI();
     applyStyles();
@@ -25,31 +28,31 @@ void LoginWindow::initializeMockUsers() {
 }
 
 void LoginWindow::setupUI() {
-    // Nu setăm windowTitle și resize când avem parent (sunt setate de QMainWindow)
+
     setMinimumSize(400, 300);
 
-    // Layout principal
+
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(20);
     mainLayout->setContentsMargins(40, 40, 40, 40);
 
-    // Titlu
+
     titleLabel = new QLabel("THE GAME", this);
     titleLabel->setAlignment(Qt::AlignCenter);
     QFont titleFont("Arial", 28, QFont::Bold);
     titleLabel->setFont(titleFont);
     mainLayout->addWidget(titleLabel);
 
-    // Spacer
+
     mainLayout->addStretch();
 
-    // Input username
+
     usernameInput = new QLineEdit(this);
     usernameInput->setPlaceholderText("Introdu numele de utilizator");
     usernameInput->setMinimumHeight(40);
     mainLayout->addWidget(usernameInput);
 
-    // Butoane
+
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(15);
 
@@ -65,7 +68,7 @@ void LoginWindow::setupUI() {
     buttonLayout->addWidget(registerButton);
     mainLayout->addLayout(buttonLayout);
 
-    // Mesaj de eroare/succes
+
     messageLabel = new QLabel(this);
     messageLabel->setAlignment(Qt::AlignCenter);
     messageLabel->setWordWrap(true);
@@ -75,14 +78,14 @@ void LoginWindow::setupUI() {
 
     mainLayout->addStretch();
 
-    // Conectări
+
     connect(loginButton, &QPushButton::clicked, this, &LoginWindow::onLoginClicked);
     connect(registerButton, &QPushButton::clicked, this, &LoginWindow::onRegisterClicked);
     connect(usernameInput, &QLineEdit::returnPressed, this, &LoginWindow::onLoginClicked);
 }
 
 void LoginWindow::applyStyles() {
-    // Stilizare personalizată - design modern
+
     setStyleSheet(
         "QWidget {"
         "    background-color: #1a1a2e;"
@@ -123,7 +126,7 @@ void LoginWindow::applyStyles() {
         "}"
     );
 
-    // Stilizare titlu separat
+
     titleLabel->setStyleSheet(
         "color: #533483;"
         "background-color: transparent;"
@@ -174,7 +177,7 @@ bool LoginWindow::mockRegister(const QString& username) {
         return false; // User deja există
     }
     
-    // Adaugă user nou în lista mock
+
     mockUsers.insert(trimmed);
     return true;
 }
@@ -188,25 +191,24 @@ void LoginWindow::onLoginClicked() {
         return;
     }
     
-    // Simulare delay pentru a simula comunicarea cu serverul
     loginButton->setEnabled(false);
     registerButton->setEnabled(false);
     messageLabel->setText("Conectare...");
     messageLabel->setStyleSheet("color: #4ecdc4; font-size: 12px;");
     messageLabel->show();
     
-    QTimer::singleShot(500, [this, username]() {
-        if (mockLogin(username)) {
+
+    QTimer::singleShot(100, [this, username]() {
+        if (gameClient && gameClient->Login(username.toStdString())) {
             messageLabel->setText("Login reușit! Redirecționare...");
             messageLabel->setStyleSheet("color: #51cf66; font-size: 12px;");
             messageLabel->show();
             
-            // Emite semnal pentru succes
-            QTimer::singleShot(1000, [this, username]() {
+            QTimer::singleShot(500, [this, username]() {
                 emit loginSuccessful(username);
             });
         } else {
-            messageLabel->setText("Username-ul nu există! Încercați să vă înregistrați.");
+            messageLabel->setText("Eroare la conectare! Verificați serverul.");
             messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
             messageLabel->show();
             loginButton->setEnabled(true);
@@ -224,7 +226,7 @@ void LoginWindow::onRegisterClicked() {
         return;
     }
     
-    // Simulare delay pentru a simula comunicarea cu serverul
+
     loginButton->setEnabled(false);
     registerButton->setEnabled(false);
     messageLabel->setText("Înregistrare...");
@@ -237,7 +239,7 @@ void LoginWindow::onRegisterClicked() {
             messageLabel->setStyleSheet("color: #51cf66; font-size: 12px;");
             messageLabel->show();
             
-            // Emite semnal pentru succes
+
             QTimer::singleShot(1000, [this, username]() {
                 emit loginSuccessful(username);
             });
