@@ -128,6 +128,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="NetworkClient.cpp" />
+    <ClCompile Include="GameClient.cpp" />
+    <ClCompile Include="ConsoleUI.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NetworkClient.h" />
+    <ClInclude Include="GameClient.h" />
+    <ClInclude Include="ConsoleUI.h" />
+    <ClInclude Include="GameState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
