@@ -2,12 +2,16 @@
 
 #include <string>
 #include <optional>
-#include "db/sqlite_orm/sqlite_orm.h"
+#include <memory>
 #include "Statistics.h"
+
+// Forward declaration - actual storage type defined in .cpp
+struct StorageImpl;
 
 class DatabaseManager {
 public:
 	explicit DatabaseManager(const std::string& dbPath = "thegame.db");
+	~DatabaseManager();
 
 	void init();
 
@@ -24,13 +28,9 @@ public:
         bool wasHost);
 
     std::optional<UserProfileStats> getUserProfile(int userId);
+    
 private:
-    using Storage = decltype(sqlite_orm::make_storage(
-        "",
-        sqlite_orm::make_table("users"),
-        sqlite_orm::make_table("game_sessions"),
-        sqlite_orm::make_table("player_game_stats")
-    ));
-	Storage storage;
+    std::unique_ptr<StorageImpl> storage;
 };
+
 
