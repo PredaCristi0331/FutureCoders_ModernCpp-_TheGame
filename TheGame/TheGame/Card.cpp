@@ -1,8 +1,7 @@
-//#include "Card.h"
-module Card;
-using game::Card;
+#include "Card.h"
+#include <string>
 
-game::Card::Card(int m_card):
+Card::Card(int m_card):
 	m_Card(m_card)
 {
 	if (m_card == 1 || m_card == 100)
@@ -29,8 +28,3 @@ bool Card::operator==(Card card)
 	return false;
 }
 
-//std::ostream& operator<<(std::ostream& os, const Card& card)
-//{
-//	os << card.m_Card;
-//	return os;
-//}
