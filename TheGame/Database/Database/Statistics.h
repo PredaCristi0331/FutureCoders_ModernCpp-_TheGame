@@ -19,12 +19,12 @@ struct GameSession {
     int cardsLeftDeck;
 };
 
-struct PlayerStatistics {
+struct PlayerGameStats {
     int id;
     int userId;
     int gameId;
     int cardsInHandEnd;
-	int performanceScore;
+    int performanceScore;
     int wasHost;
 };
 
@@ -34,6 +34,6 @@ struct UserProfileStats {
     int totalGames;
     int gamesWon;
     double winRate;
-	double avgCardsLostGames;
-	double avgPerformance;
+    double avgCardsLostGames;
+    double avgPerformance;
 };
