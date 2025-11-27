@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+
 class Card
 {
 	enum class TypeCard
@@ -9,12 +10,14 @@ class Card
 	};
 public:
 	Card(int card);
-	int GetCardNumber();
-	std::string GetTypeCard();
-	bool operator==(Card card);
-	//friend std::ostream& operator<<(std::ostream& os, const Card& card);
+
+	int GetCardNumber() const;
+	
+	std::string GetTypeCard() const;
+
+	bool operator==(const Card& card) const;
+
 private:
 	int m_Card;
 	TypeCard m_typeCard;
 };
-
