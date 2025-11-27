@@ -1,6 +1,8 @@
 //#include "TheGame.h"
 
 module TheGame;
+import <iostream>;
+import <vector>;
 using namespace game;
 
 TheGame::TheGame()
