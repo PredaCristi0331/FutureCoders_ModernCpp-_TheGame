@@ -2,7 +2,7 @@
 #include <vector>
 #include <string>
 
-struct Card {
+struct GameCard {
     int value;
 };
 
@@ -20,7 +20,7 @@ struct PlayerInfo {
 struct GameState {
     int gameId;
     std::vector<Pile> piles; // 4 piles: 2 asc, 2 desc
-    std::vector<Card> hand;
+    std::vector<GameCard> hand;
     std::vector<PlayerInfo> otherPlayers;
     int deckSize;
     bool isMyTurn;
