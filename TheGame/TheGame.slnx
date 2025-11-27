@@ -9,6 +9,14 @@
   <Project Path="ClientConsoleQt/ClientConsoleQt.vcxproj" Id="c0a26a36-a989-49bd-a9bf-38ede591fffa">
     <Platform Project="x64" />
   </Project>
+  <Project Path="Server/Server.vcxproj" Id="311edc82-582d-4400-b599-f57bb6fd0e6c">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="Database/Database/Database.vcxproj" Id="7dcff2e8-a848-4a86-b84b-e0f80b1dc71c">
+    <Platform Project="x64" />
+  </Project>
+  <Project Path="TheGame/TheGame.vcxproj" Id="thegame-project-guid">
+    <Platform Project="x64" />
+  </Project>
   <Project Path="TestsProject/TestsProject.vcxproj" Id="6dc20aaf-8b5d-420e-8791-69b39bbab792" />
-  <Project Path="TheGame/TheGame.vcxproj" Id="311edc82-582d-4400-b599-f57bb6fd0e6c" />
 </Solution>
