@@ -13,9 +13,9 @@ namespace game {
 		};
 	public:
 		Card(int card);
-		int GetCardNumber() const ;
-		std::string GetTypeCard() const ;
-		bool operator==(Card card);
+		int GetCardNumber() const;
+		std::string GetTypeCard() const;
+		bool operator==(const Card& card) const;
 		//friend std::ostream& operator<<(std::ostream& os, const Card& card);
 	private:
 		int m_Card;

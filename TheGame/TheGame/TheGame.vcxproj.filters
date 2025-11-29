@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Card.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -30,8 +27,8 @@
     <ClCompile Include="TheGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Play.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="TheGame.cppm">
+      <Filter>Header Files</Filter>
     </ClCompile>
     <ClCompile Include="Card.cppm">
       <Filter>Header Files</Filter>
@@ -42,28 +39,8 @@
     <ClCompile Include="Jucator.cppm">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="TheGame.cppm">
-      <Filter>Header Files</Filter>
-    </ClCompile>
     <ClCompile Include="Play.cppm">
       <Filter>Header Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Card.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Jucator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GameTable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TheGame.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Play.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -66,14 +66,18 @@
       <CompileAs>CompileAsCppModule</CompileAs>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
+    <ClCompile Include="Card.cppm" />
     <ClCompile Include="GameTable.cpp">
       <CompileAs>CompileAsCppModule</CompileAs>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
+    <ClCompile Include="GameTable.cppm" />
     <ClCompile Include="Jucator.cpp">
       <CompileAs>CompileAsCppModule</CompileAs>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
     </ClCompile>
+    <ClCompile Include="Jucator.cppm" />
+    <ClCompile Include="Play.cppm" />
     <ClCompile Include="TheGame.cppm" />
     <ClCompile Include="TheGame.cpp" />
   </ItemGroup>
