@@ -30,5 +30,11 @@
     <ClCompile Include="Player.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="GameTable.cppm">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

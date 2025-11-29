@@ -129,6 +129,8 @@
   <ItemGroup>
     <ClCompile Include="Card.cpp" />
     <ClCompile Include="Card.cppm" />
+    <ClCompile Include="GameTable.cpp" />
+    <ClCompile Include="GameTable.cppm" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Player.cppm" />
     <ClCompile Include="Source.cpp" />
