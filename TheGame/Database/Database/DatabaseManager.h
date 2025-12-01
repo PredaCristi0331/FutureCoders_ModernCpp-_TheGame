@@ -1,36 +1,24 @@
 #pragma once
 
-#include <string>
 #include <optional>
-#include <memory>
-#include "Statistics.h"
-
-// Forward declaration - actual storage type defined in .cpp
-struct StorageImpl;
+#include <string>
+#include "Models.h"
 
 class DatabaseManager {
 public:
-	explicit DatabaseManager(const std::string& dbPath = "thegame.db");
-	~DatabaseManager();
+    static void init(const std::string& dbPath = "game.db");
 
-	void init();
+    static bool registerUser(const std::string& username,
+        const std::string& password);
 
-	int createUser(const std::string& username, const std::string& passwordHash);
-	std::optional<User> getUserByName(const std::string& username);
+    static std::optional<User> loginUser(const std::string& username,
+        const std::string& password);
 
-    int createGameSession(int numPlayers, int customLevel);
-    void finishGame(int gameId, bool teamWon, int cardsLeftDeck);
+    static int createGameSession(const GameSession& session);
 
-    void addPlayerGameStats(int gameId,
-        int userId,
-        int cardsInHandEnd,
-        int performanceScore,
-        bool wasHost);
+    static void savePlayerStats(const PlayerGameStats& stats);
 
-    std::optional<UserProfileStats> getUserProfile(int userId);
-    
-private:
-    std::unique_ptr<StorageImpl> storage;
+    static User getUserById(int userId);
+
+    static UserProfile getUserProfile(int userId);
 };
-
-

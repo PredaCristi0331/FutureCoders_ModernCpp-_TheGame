@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="db">
+      <UniqueIdentifier>{7995eed8-9a2d-4877-98c6-e316224d2c3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="db\sqlite_orm">
+      <UniqueIdentifier>{1e322243-9d0d-4d0f-8134-e8b31540960c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Database.cpp">
@@ -21,6 +27,12 @@
     <ClCompile Include="Statistics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DatabaseManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="db\sqlite_orm\sqlite3.c">
+      <Filter>db</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">
@@ -28,6 +40,18 @@
     </ClInclude>
     <ClInclude Include="Statistics.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DatabaseManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="db\Models.h">
+      <Filter>db</Filter>
+    </ClInclude>
+    <ClInclude Include="db\sqlite_orm\sqlite_orm.h">
+      <Filter>db</Filter>
+    </ClInclude>
+    <ClInclude Include="db\sqlite_orm\sqlite3.h">
+      <Filter>db</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
