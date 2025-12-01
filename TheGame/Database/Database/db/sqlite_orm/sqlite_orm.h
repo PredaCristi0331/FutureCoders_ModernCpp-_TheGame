@@ -8,7 +8,7 @@ __pragma(push_macro("max"))
 #endif  // defined(_MSC_VER)
 #pragma once
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 #pragma once
 
 // #include "cxx_universal.h"
