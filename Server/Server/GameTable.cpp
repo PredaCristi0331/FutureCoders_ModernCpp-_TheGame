@@ -70,9 +70,20 @@ void game::GameTable::MixingDeckCards()
 		this->m_deckCards.push_back(c);
 	}
 
-	/*std::random_device rd;
+	// Fisher-Yates shuffle algorithm
+	import <random>;
+	std::random_device rd;
 	std::mt19937 g(rd());
-	std::shuffle(m_deckCards.begin(), m_deckCards.end(), g);*/
+	
+	for (int i = static_cast<int>(m_deckCards.size()) - 1; i > 0; i--) {
+		std::uniform_int_distribution<int> dist(0, i);
+		int j = dist(g);
+		
+		// Swap m_deckCards[i] with m_deckCards[j]
+		Card temp = m_deckCards[i];
+		m_deckCards[i] = m_deckCards[j];
+		m_deckCards[j] = temp;
+	}
 }
 
 void game::GameTable::IssuerCard()
@@ -204,6 +215,46 @@ void game::GameTable::RemoveLastDecreasingSecond()
 void game::GameTable::RemoveCardFromHand(int nrGamer, Card card)
 {
 	m_Gamers[nrGamer].RemoveCard(card);
+}
+
+// Move validation functions
+bool game::GameTable::IsValidMove(Card card, int stackNumber)
+{
+	int cardValue = card.GetCardNumber();
+	
+	switch (stackNumber) {
+	case 1: // Increasing First
+		if (m_increasingFirst.empty()) return false;
+		return cardValue > m_increasingFirst.back().GetCardNumber() ||
+			   cardValue == m_increasingFirst.back().GetCardNumber() - 10;
+	case 2: // Increasing Second
+		if (m_increasingSecond.empty()) return false;
+		return cardValue > m_increasingSecond.back().GetCardNumber() ||
+			   cardValue == m_increasingSecond.back().GetCardNumber() - 10;
+	case 3: // Decreasing First
+		if (m_decreasingFirst.empty()) return false;
+		return cardValue < m_decreasingFirst.back().GetCardNumber() ||
+			   cardValue == m_decreasingFirst.back().GetCardNumber() + 10;
+	case 4: // Decreasing Second
+		if (m_decreasingSecond.empty()) return false;
+		return cardValue < m_decreasingSecond.back().GetCardNumber() ||
+			   cardValue == m_decreasingSecond.back().GetCardNumber() + 10;
+	default:
+		return false;
+	}
+}
+
+std::vector<int> game::GameTable::GetValidMoves(Card card)
+{
+	std::vector<int> validStacks;
+	
+	for (int i = 1; i <= 4; i++) {
+		if (IsValidMove(card, i)) {
+			validStacks.push_back(i);
+		}
+	}
+	
+	return validStacks;
 }
 
 bool game::GameTable::IsGameWon()
