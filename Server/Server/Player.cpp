@@ -3,7 +3,7 @@ using namespace game;
 import <vector>;
 import <iostream>;
 
-game::Player::Player()
+game::Player::Player(const std::string& name):m_name(name)
 {
 	m_cards.push_back(-1);
 }

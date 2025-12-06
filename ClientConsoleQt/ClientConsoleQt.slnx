@@ -2,5 +2,5 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="ClientConsoleQt/ClientConsoleQt.vcxproj" />
+  <Project Path="ClientConsoleQt/ClientConsoleQt.vcxproj" Id="9c83468f-d824-4aef-83f2-56875e788f0c" />
 </Solution>

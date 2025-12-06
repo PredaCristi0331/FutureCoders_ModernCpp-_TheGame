@@ -2,8 +2,8 @@ module GameTable;
 using namespace game;
 import <iostream>;
 import <vector>;
-import <algorithm>;
-import <random>;
+//import <algorithm>;
+//import <random>;
 
 game::GameTable::GameTable():m_nrGamer(0)
 {
@@ -30,7 +30,9 @@ void game::GameTable::AddGamer()
 		std::cout << "Not valid gamer number. The game finished.";
 		return;
 	}
-	Player gamer;
+	std::cout << "Name:";
+	std::string name;
+	Player gamer(name);
 	for (int i = 0; i < m_nrGamer; i++)
 		m_Gamers.push_back(gamer);
 }
@@ -53,9 +55,9 @@ void game::GameTable::MixingDeckCards()
 		this->m_deckCards.push_back(c);
 	}
 
-	std::random_device rd;
+	/*std::random_device rd;
 	std::mt19937 g(rd());
-	std::shuffle(m_deckCards.begin(), m_deckCards.end(), g);
+	std::shuffle(m_deckCards.begin(), m_deckCards.end(), g);*/
 }
 
 void game::GameTable::IssuerCard()
