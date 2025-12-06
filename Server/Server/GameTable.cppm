@@ -49,6 +49,11 @@ namespace game {
 		void RemoveLastDecreasingSecond();
 
 		void RemoveCardFromHand(int nrGamer, Card card);
+		
+		// Move validation functions
+		bool IsValidMove(Card card, int stackNumber);
+		std::vector<int> GetValidMoves(Card card);
+		
 		bool IsGameWon();
 	private:
 		int m_nrGamer;
