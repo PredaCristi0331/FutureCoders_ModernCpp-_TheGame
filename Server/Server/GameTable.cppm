@@ -26,14 +26,16 @@ namespace game {
 		Card GetLastCardFromDecreasingSecond();
 
 		void ShowCardsGamer(int nrGamer);
-		std::vector<Card> GetCardsGamer(int nrGamer);
+		std::vector<Card>& GetCardsGamer(int nrGamer);
+		const std::vector<Card>& GetCardsGamer(int nrGamer) const;
 
 		void PushIncreasingFirst(Card card);
 		void PushIncreasingSecond(Card card);
 		void PushDecreasingFirst(Card card);
 		void PushDecreasingSecond(Card card);
 
-		Player GetGamer(int nrGamer);
+		Player& GetGamer(int nrGamer);
+		const Player& GetGamer(int nrGamer) const;
 
 		void PushCard(Card card, int nrGamer);
 

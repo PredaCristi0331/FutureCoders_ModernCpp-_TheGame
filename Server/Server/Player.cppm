@@ -15,7 +15,8 @@ namespace game {
 		std::string GetName();
 		void AddCard(Card cardDrawn);
 		Card returnCard(int numberCard);
-		std::vector<Card> GetCards() const;
+		std::vector<Card>& GetCards();
+		const std::vector<Card>& GetCards() const;
 		void ShowCards();
 		Card CardLaidDown(int card);
 		void RemoveCard(Card card);

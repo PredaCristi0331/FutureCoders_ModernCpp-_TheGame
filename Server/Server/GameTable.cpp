@@ -121,7 +121,12 @@ void game::GameTable::ShowCardsGamer(int nrGamer)
 	j.ShowCards();
 }
 
-std::vector<Card> game::GameTable::GetCardsGamer(int nrGamer)
+std::vector<Card>& game::GameTable:: GetCardsGamer(int nrGamer)
+{
+	return m_Gamers[nrGamer].GetCards();
+}
+
+const std::vector<Card>& game::GameTable::GetCardsGamer(int nrGamer) const
 {
 	return m_Gamers[nrGamer].GetCards();
 }
@@ -146,7 +151,12 @@ void game::GameTable::PushDecreasingSecond(Card card)
 	m_decreasingSecond.push_back(card);
 }
 
-Player game::GameTable::GetGamer(int nrGamer)
+Player& game::GameTable::GetGamer(int nrGamer)
+{
+	return m_Gamers[nrGamer];
+}
+
+const Player& game::GameTable::GetGamer(int nrGamer) const
 {
 	return m_Gamers[nrGamer];
 }

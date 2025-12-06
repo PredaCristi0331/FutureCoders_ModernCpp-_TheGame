@@ -41,7 +41,7 @@ void game::TheGame::Rund()
 		std::cout << m_gameTable.GetGamer(i).GetName() << " is playing.\n";
 		
 		std::cout << "\n";
-		std::vector<Card>cards = m_gameTable.GetCardsGamer(i);
+		auto& cards = m_gameTable.GetCardsGamer(i);
 		if (m_gameTable.SizeDeckCards() != 0)
 		{
 			std::cout << "Please enter how many cards do you want to put! (It must be minim 2 cards!)\n";
@@ -81,22 +81,23 @@ void game::TheGame::Rund()
 			std::cin >> stackCard;
 
 			if (stackCard == 1)
-				if (stackCard > m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber())
+				if (cardSelect > m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber())
 				{
 					m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
 				else {
-					if (stackCard == m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber() - 10) {
+					if (cardSelect == m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber() - 10) {
 						m_gameTable.RemoveLastIncreasingFirst();
 						m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 					}
 				}
 
 			if (stackCard == 2)
-				if (stackCard > m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber()) {
-					m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
+				if (cardSelect > m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber()) {
+					Card card = m_gameTable.GetGamer(i).CardLaidDown(cardSelect);
+					m_gameTable.PushIncreasingSecond(card);
 				}
-				else if (stackCard == m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber() - 10) {
+				else if (cardSelect == m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber() - 10) {
 					m_gameTable.RemoveLastIncreasingSecond();
 					m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
@@ -106,19 +107,20 @@ void game::TheGame::Rund()
 					//if (m_gameTable.GamerCard(cardSelect,i) == true) {
 						
 						Card card = m_gameTable.GetGamer(i).CardLaidDown(cardSelect);
+						m_gameTable.ShowCardsGamer(i);
 						m_gameTable.PushDecreasingFirst(card);
 					//}
 					//else std::cout << "This is not your card.\n";
 				}
-				else if (stackCard == m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() + 10) {
+				else if (cardSelect == m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() + 10) {
 					m_gameTable.RemoveLastDecreasingFirst();
 					m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
 			if (stackCard == 4)
-				if (stackCard < m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber()) {
+				if (cardSelect < m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber()) {
 					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
-				else if (stackCard == m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() + 10) {
+				else if (cardSelect == m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() + 10) {
 					m_gameTable.RemoveLastDecreasingSecond();
 					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
@@ -127,7 +129,7 @@ void game::TheGame::Rund()
 				m_gameTable.PushCard(m_gameTable.DeckCardsLast(), i);
 				m_gameTable.RemoveDeckCardsLast();
 			}
-			m_gameTable.ShowCardsGamer(i);
+			
 		}
 	}
 }

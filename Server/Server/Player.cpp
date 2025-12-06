@@ -29,7 +29,12 @@ Card game::Player::returnCard(int numberCard)
 	return Card(-1);
 }
 
-std::vector<Card> game::Player::GetCards() const
+std::vector<Card>& game::Player::GetCards()
+{
+	return this->m_cards;
+}
+
+const std::vector<Card>& game::Player::GetCards() const
 {
 	return this->m_cards;
 }
