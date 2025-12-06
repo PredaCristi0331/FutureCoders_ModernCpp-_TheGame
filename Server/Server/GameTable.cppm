@@ -13,6 +13,7 @@ namespace game {
 		GameTable(int nrGamer);
 		void SetNrGamer(int nrGamer);
 		int GetNrGame();
+		bool GamerCard(int cardNumber, int nrGamer);
 
 		void AddGamer();
 		void AddInitialCards();

@@ -38,7 +38,9 @@ void game::TheGame::Rund()
 {
 	for (int i = 0; i < m_gameTable.GetNrGame(); i++) {
 		ShowLastCardsFromStacks();
-		m_gameTable.ShowCardsGamer(i);
+		std::cout << m_gameTable.GetGamer(i).GetName() << " is playing.\n";
+		
+		std::cout << "\n";
 		std::vector<Card>cards = m_gameTable.GetCardsGamer(i);
 		if (m_gameTable.SizeDeckCards() != 0)
 		{
@@ -99,19 +101,24 @@ void game::TheGame::Rund()
 					m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
 			if (stackCard == 3)
-				if (stackCard > m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber())
+				if (cardSelect < m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber())
 				{
-					m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
+					//if (m_gameTable.GamerCard(cardSelect,i) == true) {
+						
+						Card card = m_gameTable.GetGamer(i).CardLaidDown(cardSelect);
+						m_gameTable.PushDecreasingFirst(card);
+					//}
+					//else std::cout << "This is not your card.\n";
 				}
-				else if (stackCard == m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() - 10) {
+				else if (stackCard == m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() + 10) {
 					m_gameTable.RemoveLastDecreasingFirst();
 					m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
 			if (stackCard == 4)
-				if (stackCard > m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber()) {
+				if (stackCard < m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber()) {
 					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
-				else if (stackCard == m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() - 10) {
+				else if (stackCard == m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() + 10) {
 					m_gameTable.RemoveLastDecreasingSecond();
 					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
 				}
@@ -120,6 +127,7 @@ void game::TheGame::Rund()
 				m_gameTable.PushCard(m_gameTable.DeckCardsLast(), i);
 				m_gameTable.RemoveDeckCardsLast();
 			}
+			m_gameTable.ShowCardsGamer(i);
 		}
 	}
 }

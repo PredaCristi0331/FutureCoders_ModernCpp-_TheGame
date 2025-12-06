@@ -23,6 +23,15 @@ int game::GameTable::GetNrGame()
 	return m_nrGamer;
 }
 
+bool game::GameTable::GamerCard(int cardNumber, int nrGamer)
+{
+	for (int i = 0; i < m_Gamers[nrGamer].GetCards().size(); i++) {
+		if (m_Gamers[nrGamer].returnCard(i) == cardNumber)
+			return true;
+	}
+	return false;
+}
+
 void game::GameTable::AddGamer()
 {
 	if (m_nrGamer < 2 || m_nrGamer>5)
@@ -30,11 +39,17 @@ void game::GameTable::AddGamer()
 		std::cout << "Not valid gamer number. The game finished.";
 		return;
 	}
-	std::cout << "Name:";
-	std::string name;
-	Player gamer(name);
-	for (int i = 0; i < m_nrGamer; i++)
+	for (int i = 0; i < m_nrGamer; i++) {
+		std::cout << "Name of the "<<i+1<<" gamer:";
+		std::string name;
+		std::cin >> name;
+		Player gamer(name);
+
 		m_Gamers.push_back(gamer);
+	}
+	std::cout << "The gamers are:\n";
+	for (int i = 0; i < m_Gamers.size(); i++)
+		std::cout << m_Gamers[i].GetName() << "\n";
 }
 
 void game::GameTable::AddInitialCards()
@@ -102,6 +117,7 @@ Card game::GameTable::GetLastCardFromDecreasingSecond()
 void game::GameTable::ShowCardsGamer(int nrGamer)
 {
 	Player j = m_Gamers[nrGamer];
+	std::cout << "My cards!\n";
 	j.ShowCards();
 }
 

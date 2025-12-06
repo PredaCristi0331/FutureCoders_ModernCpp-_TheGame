@@ -8,11 +8,25 @@ game::Player::Player(const std::string& name):m_name(name)
 	m_cards.push_back(-1);
 }
 
+std::string game::Player::GetName()
+{
+	return m_name;
+}
+
 void game::Player::AddCard(Card cardDrawn)
 {
 	if (m_cards.size() == 1 && m_cards[0] == -1)
 		m_cards[0] = cardDrawn;
 	else this->m_cards.push_back(cardDrawn);
+}
+
+Card game::Player::returnCard(int numberCard)
+{
+	for (int i = 0; i < m_cards.size(); i++) {
+		if (m_cards[i].GetCardNumber() == numberCard)
+			return m_cards[i];
+	}
+	return Card(-1);
 }
 
 std::vector<Card> game::Player::GetCards() const
@@ -29,16 +43,16 @@ void game::Player::ShowCards()
 
 Card game::Player::CardLaidDown(int card)
 {
-	int j = -1;
-	for (int i = 0; i < m_cards.size(); i++)
-		if (m_cards[i].GetCardNumber() == card) {
-			j = i;
-			break;
-		}
-	if (j > -1)
-		for (int i = j; i < m_cards.size() - 1; i++)
-			m_cards[i] = m_cards[i + 1];
-	return m_cards[j];
+	auto it = std::find_if(m_cards.begin(), m_cards.end(),
+		[card](const Card& c) { return c.GetCardNumber() == card; });
+
+	if (it == m_cards.end())
+		throw std::runtime_error("Card not found");
+
+	Card result = *it;
+	m_cards.erase(it);
+
+	return result;
 }
 
 void game::Player::RemoveCard(Card card)

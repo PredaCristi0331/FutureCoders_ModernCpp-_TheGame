@@ -12,7 +12,9 @@ namespace game {
 		std::vector<Card>m_cards;
 	public:
 		Player(const std::string& name);
+		std::string GetName();
 		void AddCard(Card cardDrawn);
+		Card returnCard(int numberCard);
 		std::vector<Card> GetCards() const;
 		void ShowCards();
 		Card CardLaidDown(int card);
