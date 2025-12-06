@@ -36,6 +36,8 @@ void game::TheGame::ShowLastCardsFromStacks()
 
 void game::TheGame::Rund()
 {
+	m_stats.roundsPlayed++;  // Track round
+	
 	for (int i = 0; i < m_gameTable.GetNrGame(); i++) {
 		ShowLastCardsFromStacks();
 		std::cout << m_gameTable.GetGamer(i).GetName() << " is playing.\n";
@@ -72,13 +74,15 @@ void game::TheGame::Rund()
 			}
 		}
 
-		for (int i = 0; i < nrCards; i++) {
+		for (int j = 0; j < nrCards; j++) {
 			std::cout << std::endl << "Please choose a card and enter the number of the card!\n";
 			int cardSelect;
 			std::cin >> cardSelect;
 			std::cout << "Please choose the stack of the cards where you want to put, and enter the number of the stack!\n";
 			int stackCard;
 			std::cin >> stackCard;
+			
+			bool isSpecialMove = false;  // Track if this is a backward trick
 
 			if (stackCard == 1)
 				if (cardSelect > m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber())
@@ -89,6 +93,7 @@ void game::TheGame::Rund()
 					if (cardSelect == m_gameTable.GetLastCardFromIncreasingFirst().GetCardNumber() - 10) {
 						m_gameTable.RemoveLastIncreasingFirst();
 						m_gameTable.PushIncreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
+						isSpecialMove = true;
 					}
 				}
 
@@ -100,6 +105,7 @@ void game::TheGame::Rund()
 				else if (cardSelect == m_gameTable.GetLastCardFromIncreasingSecond().GetCardNumber() - 10) {
 					m_gameTable.RemoveLastIncreasingSecond();
 					m_gameTable.PushIncreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
+					isSpecialMove = true;
 				}
 			if (stackCard == 3)
 				if (cardSelect < m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber())
@@ -115,6 +121,7 @@ void game::TheGame::Rund()
 				else if (cardSelect == m_gameTable.GetLastCardFromDecreasingFirst().GetCardNumber() + 10) {
 					m_gameTable.RemoveLastDecreasingFirst();
 					m_gameTable.PushDecreasingFirst(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
+					isSpecialMove = true;
 				}
 			if (stackCard == 4)
 				if (cardSelect < m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber()) {
@@ -123,7 +130,16 @@ void game::TheGame::Rund()
 				else if (cardSelect == m_gameTable.GetLastCardFromDecreasingSecond().GetCardNumber() + 10) {
 					m_gameTable.RemoveLastDecreasingSecond();
 					m_gameTable.PushDecreasingSecond(m_gameTable.GetGamer(i).CardLaidDown(cardSelect));
+					isSpecialMove = true;
 				}
+			
+			// Update statistics
+			m_stats.totalMoves++;
+			m_stats.cardsPlayed++;
+			if (isSpecialMove) {
+				m_stats.specialMoves++;
+			}
+			
 			if (m_gameTable.SizeDeckCards() != 0)
 			{
 				m_gameTable.PushCard(m_gameTable.DeckCardsLast(), i);
@@ -150,4 +166,20 @@ bool game::TheGame::Lost()
 bool game::TheGame::GetLostGame()
 {
 	return m_lostGame;
+}
+
+// Statistics methods implementation
+GameStats game::TheGame::GetStats() const
+{
+	return m_stats;
+}
+
+void game::TheGame::PrintStats() const
+{
+	std::cout << "\n=== Game Statistics ===\n";
+	std::cout << "Rounds Played: " << m_stats.roundsPlayed << "\n";
+	std::cout << "Total Moves: " << m_stats.totalMoves << "\n";
+	std::cout << "Cards Played: " << m_stats.cardsPlayed << "\n";
+	std::cout << "Special Moves (Backward Tricks): " << m_stats.specialMoves << "\n";
+	std::cout << "=======================\n\n";
 }
