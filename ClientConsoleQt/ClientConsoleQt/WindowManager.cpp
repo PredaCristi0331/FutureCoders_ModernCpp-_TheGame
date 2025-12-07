@@ -2,7 +2,7 @@
 #include "LoginWindow.h"
 #include "LobbyWindow.h"
 // TODO: Include aici ferestre noi când le creezi:
-// #include "ProfileWindow.h"
+#include "ProfileWindow.h"
 // #include "GameBoardWindow.h"
 
 #include "GameClient.h"
@@ -40,11 +40,10 @@ void WindowManager::initWindows() {
     connect(lobbyWindow, &LobbyWindow::logout,
             this, &WindowManager::showLoginWindow);
 
-    // TODO: Creează aici ferestre noi pentru commit-urile viitoare:
-    // profileWindow = new ProfileWindow(this);
-    // addWidget(profileWindow);
-    // 
-    // gameBoardWindow = new GameBoardWindow(this);
+    profileWindow = new ProfileWindow(this);
+    addWidget(profileWindow);
+    connect(profileWindow, &ProfileWindow::backToLobby, 
+            [this]() { showLobbyWindow(""); }); // Lambda for simple redirection    // gameBoardWindow = new GameBoardWindow(this);
     // addWidget(gameBoardWindow);
 }
 
@@ -55,21 +54,20 @@ void WindowManager::showLoginWindow() {
 
 void WindowManager::showLobbyWindow(const QString& username) {
     if (lobbyWindow) {
-        lobbyWindow->setUsername(username);
+        if (!username.isEmpty()) {
+            lobbyWindow->setUsername(username);
+        }
         setCurrentIndex(LOBBY);
         emit windowChanged(LOBBY);
     }
 }
 
 void WindowManager::showProfileWindow(const QString& username) {
-    // TODO: Implementează în commit-ul pentru ProfileWindow
-    // if (!profileWindow) {
-    //     profileWindow = new ProfileWindow(this);
-    //     addWidget(profileWindow);
-    // }
-    // profileWindow->setUsername(username);
-    // setCurrentIndex(PROFILE);
-    // emit windowChanged(PROFILE);
+    if (profileWindow) {
+        profileWindow->setUsername(username);
+        setCurrentIndex(PROFILE);
+        emit windowChanged(PROFILE);
+    }
 }
 
 void WindowManager::showGameBoardWindow(const QString& username) {

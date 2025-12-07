@@ -140,6 +140,7 @@ void LobbyWindow::applyStyles() {
         "    border-radius: 8px;"
         "    font-size: 14px;"
         "    font-weight: bold;"
+        "    padding: 10px;"
         "}"
         "QPushButton:hover {"
         "    background-color: #6a4c93;"
@@ -185,23 +186,28 @@ void LobbyWindow::onDifficultyChanged(int index) {
 
 void LobbyWindow::onPlayClicked() {
     if (!currentUsername.isEmpty()) {
-        // Dezactivează butoanele
+        // UI State Update
         playButton->setEnabled(false);
         profileButton->setEnabled(false);
         logoutButton->setEnabled(false);
         difficultyComboBox->setEnabled(false);
+        
+        // Visual Feedback
+        playButton->setText("Se caută adversar...");
+        // Orange color for "searching" state
+        playButton->setStyleSheet("background-color: #d35400; color: white; border-radius: 8px; font-weight: bold; font-size: 14px;");
 
         // Afișează status de matchmaking
         updateStatus("Căutare joc...", "#4ecdc4");
         
-        // Simulează matchmaking (2-3 secunde)
+        // Simulează matchmaking cu lambda
         if (!matchmakingTimer) {
             matchmakingTimer = new QTimer(this);
             matchmakingTimer->setSingleShot(true);
             connect(matchmakingTimer, &QTimer::timeout, this, &LobbyWindow::onMatchmakingTimeout);
         }
         
-        matchmakingTimer->start(2000); // 2 secunde pentru simulare
+        matchmakingTimer->start(2000);
     }
 }
 
