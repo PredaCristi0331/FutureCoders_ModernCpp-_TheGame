@@ -127,7 +127,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="TestGameLogic.cpp" />
+    <ClCompile Include="TestInventory.cpp" />
+    <ClCompile Include="TestPlayer.cpp" />
+    <ClCompile Include="TestUtils.cpp" />
     <ClCompile Include="test_main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TestGameLogic.h" />
+    <ClInclude Include="TestInventory.h" />
+    <ClInclude Include="TestPlayer.h" />
+    <ClInclude Include="TestUtils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

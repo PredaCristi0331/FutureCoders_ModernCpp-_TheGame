@@ -30,9 +30,12 @@
     <ClCompile Include="DatabaseManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+<<<<<<< Updated upstream
     <ClCompile Include="db\sqlite_orm\sqlite3.c">
       <Filter>db</Filter>
     </ClCompile>
+=======
+>>>>>>> Stashed changes
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Database.h">
@@ -44,6 +47,7 @@
     <ClInclude Include="DatabaseManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+<<<<<<< Updated upstream
     <ClInclude Include="db\Models.h">
       <Filter>db</Filter>
     </ClInclude>
@@ -53,5 +57,7 @@
     <ClInclude Include="db\sqlite_orm\sqlite3.h">
       <Filter>db</Filter>
     </ClInclude>
+=======
+>>>>>>> Stashed changes
   </ItemGroup>
 </Project>

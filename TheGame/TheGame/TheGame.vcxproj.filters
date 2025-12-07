@@ -30,6 +30,7 @@
     <ClCompile Include="TheGame.cppm">
       <Filter>Header Files</Filter>
     </ClCompile>
+<<<<<<< Updated upstream
     <ClCompile Include="Card.cppm">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -42,5 +43,7 @@
     <ClCompile Include="Play.cppm">
       <Filter>Header Files</Filter>
     </ClCompile>
+=======
+>>>>>>> Stashed changes
   </ItemGroup>
 </Project>
