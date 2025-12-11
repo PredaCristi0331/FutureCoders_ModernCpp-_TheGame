@@ -44,5 +44,8 @@
     <ClInclude Include="TestUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="TestRunner.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

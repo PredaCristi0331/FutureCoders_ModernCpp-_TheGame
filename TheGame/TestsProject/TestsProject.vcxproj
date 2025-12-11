@@ -137,6 +137,7 @@
     <ClInclude Include="TestGameLogic.h" />
     <ClInclude Include="TestInventory.h" />
     <ClInclude Include="TestPlayer.h" />
+    <ClInclude Include="TestRunner.h" />
     <ClInclude Include="TestUtils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
