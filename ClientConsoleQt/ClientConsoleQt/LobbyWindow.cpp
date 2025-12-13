@@ -1,4 +1,5 @@
 #include "LobbyWindow.h"
+#include "RulesWindow.h"
 #include <QFont>
 
 LobbyWindow::LobbyWindow(QWidget* parent) 
@@ -71,6 +72,13 @@ void LobbyWindow::setupUI() {
     profileButton->setMinimumHeight(45);
     profileButton->setMinimumWidth(200);
     buttonLayout->addWidget(profileButton);
+
+    rulesButton = new QPushButton("Regulament", this);
+    rulesButton->setMinimumHeight(45);
+    rulesButton->setMinimumWidth(200);
+    // Style specific
+    rulesButton->setStyleSheet("background-color: #0f3460;"); // Distinct color
+    buttonLayout->addWidget(rulesButton);
 
     logoutButton = new QPushButton("Logout", this);
     logoutButton->setMinimumHeight(45);
@@ -172,6 +180,7 @@ void LobbyWindow::applyStyles() {
 void LobbyWindow::connectSignals() {
     connect(playButton, &QPushButton::clicked, this, &LobbyWindow::onPlayClicked);
     connect(profileButton, &QPushButton::clicked, this, &LobbyWindow::onProfileClicked);
+    connect(rulesButton, &QPushButton::clicked, this, &LobbyWindow::onRulesClicked);
     connect(logoutButton, &QPushButton::clicked, this, &LobbyWindow::onLogoutClicked);
     connect(difficultyComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &LobbyWindow::onDifficultyChanged);
@@ -223,6 +232,11 @@ void LobbyWindow::onMatchmakingTimeout() {
 
 void LobbyWindow::onProfileClicked() {
     emit showProfile(currentUsername);
+}
+
+void LobbyWindow::onRulesClicked() {
+    RulesWindow rules(this);
+    rules.exec();
 }
 
 void LobbyWindow::onLogoutClicked() {

@@ -6,6 +6,7 @@
 // #include "GameBoardWindow.h"
 
 #include "GameClient.h"
+#include "GameBoardWindow.h"
 
 WindowManager::WindowManager(QWidget* parent)
     : QStackedWidget(parent)
@@ -43,8 +44,8 @@ void WindowManager::initWindows() {
     profileWindow = new ProfileWindow(this);
     addWidget(profileWindow);
     connect(profileWindow, &ProfileWindow::backToLobby, 
-            [this]() { showLobbyWindow(""); }); // Lambda for simple redirection    // gameBoardWindow = new GameBoardWindow(this);
-    // addWidget(gameBoardWindow);
+            [this]() { showLobbyWindow(""); }); // Lambda for simple redirection    gameBoardWindow = new GameBoardWindow(gameClient, this);
+    addWidget(gameBoardWindow);
 }
 
 void WindowManager::showLoginWindow() {
@@ -71,21 +72,10 @@ void WindowManager::showProfileWindow(const QString& username) {
 }
 
 void WindowManager::showGameBoardWindow(const QString& username) {
-    // TODO: Implementează în commit-ul pentru GameBoardWindow
-    // Pentru moment, afișăm un mesaj temporar
-    // if (!gameBoardWindow) {
-    //     gameBoardWindow = new GameBoardWindow(this);
-    //     addWidget(gameBoardWindow);
-    // }
-    // gameBoardWindow->setUsername(username);
-    // setCurrentIndex(GAME_BOARD);
-    // emit windowChanged(GAME_BOARD);
-    
-    // Temporar: revenim la lobby (va fi înlocuit cu GameBoardWindow real)
-    if (lobbyWindow) {
-        lobbyWindow->setUsername(username);
-        setCurrentIndex(LOBBY);
-        emit windowChanged(LOBBY);
+    if (gameBoardWindow) {
+        gameBoardWindow->setUsername(username);
+        setCurrentIndex(GAME_BOARD);
+        emit windowChanged(GAME_BOARD);
     }
 }
 

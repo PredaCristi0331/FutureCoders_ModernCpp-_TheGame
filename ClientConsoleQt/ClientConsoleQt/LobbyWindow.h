@@ -34,6 +34,7 @@ signals:
 private slots:
     void onPlayClicked();
     void onProfileClicked();
+    void onRulesClicked();
     void onLogoutClicked();
     void onDifficultyChanged(int index);
     void onMatchmakingTimeout();
@@ -48,6 +49,7 @@ private:
     QComboBox* difficultyComboBox;
     QPushButton* playButton;
     QPushButton* profileButton;
+    QPushButton* rulesButton;
     QPushButton* logoutButton;
     QLabel* statusLabel;
     QTimer* matchmakingTimer;
