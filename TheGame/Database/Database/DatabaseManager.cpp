@@ -1,55 +1,85 @@
 ﻿#include "DatabaseManager.h"
 #include "sqlite_orm.h"
-#include <vector>
+
+using namespace sqlite_orm;
 
 namespace
 {
-    inline auto& storage()
-    {
-        static auto storage = sqlite_orm::make_storage(
-            "game.db",
+    inline std::string& db_path_ref() {
+        static std::string path = "game.db";
+        return path;
+    }
 
-            sqlite_orm::make_table("users",
-                sqlite_orm::make_column("id", &User::id,
-                    sqlite_orm::primary_key().autoincrement()),
-                sqlite_orm::make_column("username", &User::username,
-                    sqlite_orm::unique()),
-                sqlite_orm::make_column("password", &User::password)
+    inline auto& storage() {
+        static auto stor = make_storage(
+            db_path_ref(),
+
+            make_table("users",
+                make_column("id", &User::id, primary_key().autoincrement()),
+                make_column("username", &User::username, unique()),
+                make_column("password", &User::password),
+
+                make_column("hours_played_seconds", &User::hours_played_seconds, default_value(0)),
+                make_column("performance_score", &User::performance_score, default_value(1))
             ),
 
-            sqlite_orm::make_table("game_sessions",
-                sqlite_orm::make_column("id", &GameSession::id,
-                    sqlite_orm::primary_key().autoincrement()),
-                sqlite_orm::make_column("start_time", &GameSession::start_time),
-                sqlite_orm::make_column("end_time", &GameSession::end_time),
-                sqlite_orm::make_column("difficulty", &GameSession::difficulty),
-                sqlite_orm::make_column("num_players", &GameSession::num_players),
-                sqlite_orm::make_column("won", &GameSession::won),
-                sqlite_orm::make_column("cards_left_in_draw", &GameSession::cards_left_in_draw),
-                sqlite_orm::make_column("total_moves", &GameSession::total_moves)
+            make_table("game_sessions",
+                make_column("id", &GameSession::id, primary_key().autoincrement()),
+
+                make_column("created_at", &GameSession::created_at),
+                make_column("start_time", &GameSession::start_time),
+                make_column("end_time", &GameSession::end_time),
+
+                make_column("status", &GameSession::status),
+                make_column("num_players", &GameSession::num_players),
+
+                make_column("won", &GameSession::won),
+                make_column("cards_left_in_draw", &GameSession::cards_left_in_draw),
+                make_column("total_moves", &GameSession::total_moves),
+
+                make_column("duration_seconds", &GameSession::duration_seconds, default_value(0))
             ),
 
-            sqlite_orm::make_table("player_game_stats",
-                sqlite_orm::make_column("id", &PlayerGameStats::id,
-                    sqlite_orm::primary_key().autoincrement()),
-                sqlite_orm::make_column("user_id", &PlayerGameStats::user_id),
-                sqlite_orm::make_column("game_session_id", &PlayerGameStats::game_session_id),
-                sqlite_orm::make_column("is_host", &PlayerGameStats::is_host),
-                sqlite_orm::make_column("final_cards_in_hand", &PlayerGameStats::final_cards_in_hand),
-                sqlite_orm::make_column("moves_played", &PlayerGameStats::moves_played),
-                sqlite_orm::make_column("won", &PlayerGameStats::won)
-            )
+            make_table("player_game_stats",
+                make_column("id", &PlayerGameStats::id, primary_key().autoincrement()),
+                make_column("user_id", &PlayerGameStats::user_id),
+                make_column("game_session_id", &PlayerGameStats::game_session_id),
+
+                make_column("is_host", &PlayerGameStats::is_host),
+                make_column("final_cards_in_hand", &PlayerGameStats::final_cards_in_hand),
+                make_column("moves_played", &PlayerGameStats::moves_played),
+                make_column("won", &PlayerGameStats::won),
+
+                foreign_key(&PlayerGameStats::user_id).references(&User::id).on_delete.cascade(),
+                foreign_key(&PlayerGameStats::game_session_id).references(&GameSession::id).on_delete.cascade()
+            ),
+
+            make_table("chat_messages",
+                make_column("id", &ChatMessage::id, primary_key().autoincrement()),
+                make_column("game_session_id", &ChatMessage::game_session_id),
+                make_column("user_id", &ChatMessage::user_id),
+                make_column("message", &ChatMessage::message),
+                make_column("timestamp", &ChatMessage::timestamp),
+
+                foreign_key(&ChatMessage::game_session_id).references(&GameSession::id).on_delete.cascade(),
+                foreign_key(&ChatMessage::user_id).references(&User::id).on_delete.cascade()
+            ),
+
+            make_index("idx_pgs_user", &PlayerGameStats::user_id),
+            make_index("idx_pgs_session", &PlayerGameStats::game_session_id),
+            make_index("idx_chat_session", &ChatMessage::game_session_id)
         );
 
-        storage.sync_schema();
-        return storage;
+        
+        stor.sync_schema(true);
+        return stor;
     }
 }
 
 
 void DatabaseManager::init(const std::string& dbPath)
 {
-    (void)dbPath;
+    db_path_ref() = dbPath;
     storage();
 }
 
@@ -94,7 +124,7 @@ std::optional<User> DatabaseManager::loginUser(const std::string& username,
 }
 
 
-int DatabaseManager::createGameSession(const GameSession& session)
+int DatabaseManager::createWaitingSession(const GameSession& session)
 {
     GameSession s = session;
     s.id = 0;
