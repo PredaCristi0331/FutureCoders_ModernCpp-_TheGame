@@ -74,6 +74,12 @@ namespace
         stor.sync_schema(true);
         return stor;
     }
+
+    static int clampScore(int s) {
+        if (s < 1) return 1;
+        if (s > 5) return 5;
+        return s;
+    }
 }
 
 
@@ -84,24 +90,23 @@ void DatabaseManager::init(const std::string& dbPath)
 }
 
 
-bool DatabaseManager::registerUser(const std::string& username,
-    const std::string& password)
-{
-    auto existing = storage().get_all<User>(
-        sqlite_orm::where(sqlite_orm::c(&User::username) == username)
-    );
-
-    if (!existing.empty()) {
-        return false;
-    }
+bool DatabaseManager::registerUser(const std::string& username, const std::string& password) {
+    auto existing = storage().get_all<User>(where(c(&User::username) == username));
+    if (!existing.empty()) return false;
 
     User u{};
-    u.id = 0;
     u.username = username;
     u.password = password;
+    u.hours_played_seconds = 0;
+    u.performance_score = 1;
 
-    storage().insert(u);
-    return true;
+    try {
+        storage().insert(u);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
 }
 
 
