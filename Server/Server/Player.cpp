@@ -8,9 +8,27 @@ game::Player::Player(const std::string& name):m_name(name)
 	m_cards.push_back(-1);
 }
 
+void game::Player::SetId(int id) {
+	m_id = id;
+}
+
+int game::Player::GetId() {
+	return m_id;
+}
+
 std::string game::Player::GetName()
 {
 	return m_name;
+}
+
+void game::Player::SetName(std::string name)
+{
+	m_name = name;
+}
+
+void game::Player::SetCards(std::vector<Card> cards)
+{
+	m_cards = cards;
 }
 
 void game::Player::AddCard(Card cardDrawn)
