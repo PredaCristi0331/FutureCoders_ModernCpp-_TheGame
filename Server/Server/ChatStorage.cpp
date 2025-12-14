@@ -1,4 +1,5 @@
-import ChatMessage;
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
 #include "ChatStorage.h"
 
 namespace http
@@ -9,16 +10,16 @@ namespace http
         return true;
     }
 
-    void ChatStorage::AddMessage(const ChatMessage& msg)
+    void ChatStorage::AddMessage(const chat::ChatMessage& msg)
     {
         m_db.insert(msg);
     }
 
-    std::vector<ChatMessage> ChatStorage::GetMessagesForGame(int gameId)
+    std::vector<chat::ChatMessage> ChatStorage::GetMessagesForGame(int gameId)
     {
-        return m_db.get_all<ChatMessage>(
-            sql::where(sql::c(&ChatMessage::GetGameId) == gameId),
-            sql::order_by(&ChatMessage::GetId)
+        using namespace sqlite_orm;
+        return m_db.get_all<chat::ChatMessage>(
+            where(c(&chat::ChatMessage::GetGameId) == gameId)
         );
     }
 }
