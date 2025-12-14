@@ -48,9 +48,18 @@
     <ClCompile Include="ChatMessage.cppm">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="ChatStorage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChatHeandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChatStorage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChatHeandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
