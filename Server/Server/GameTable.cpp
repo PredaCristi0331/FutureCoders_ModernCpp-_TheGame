@@ -71,19 +71,19 @@ void game::GameTable::MixingDeckCards()
 	}
 
 	// Fisher-Yates shuffle algorithm
-	import <random>;
-	std::random_device rd;
-	std::mt19937 g(rd());
-	
-	for (int i = static_cast<int>(m_deckCards.size()) - 1; i > 0; i--) {
-		std::uniform_int_distribution<int> dist(0, i);
-		int j = dist(g);
-		
-		// Swap m_deckCards[i] with m_deckCards[j]
-		Card temp = m_deckCards[i];
-		m_deckCards[i] = m_deckCards[j];
-		m_deckCards[j] = temp;
-	}
+	//import <random>;
+	//std::random_device rd;
+	//std::mt19937 g(rd());
+	//
+	//for (int i = static_cast<int>(m_deckCards.size()) - 1; i > 0; i--) {
+	//	std::uniform_int_distribution<int> dist(0, i);
+	//	int j = dist(g);
+	//	
+	//	// Swap m_deckCards[i] with m_deckCards[j]
+	//	Card temp = m_deckCards[i];
+	//	m_deckCards[i] = m_deckCards[j];
+	//	m_deckCards[j] = temp;
+	//}
 }
 
 void game::GameTable::IssuerCard()
