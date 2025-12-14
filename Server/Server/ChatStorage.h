@@ -1,3 +1,8 @@
+#ifndef CHAT_STORAGE_H
+#define CHAT_STORAGE_H
+
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+
 #include <string>
 #include <vector>
 
@@ -8,6 +13,7 @@ import Player;
 import ChatMessage;
 
 namespace sql = sqlite_orm;
+using chat::ChatMessage;
 
 namespace http
 {
@@ -17,16 +23,19 @@ namespace http
             filename,
 
             // ---- Players ----
-            sql::make_column(
-                "id",
-                &game::Player::SetId,
-                &game::Player::GetId,
-                sql::primary_key().autoincrement()
-            ),
-            sql::make_column(
-                "name",
-                &game::Player::SetName,
-                &game::Player::GetName
+            sql::make_table(
+                "Players",
+                sql::make_column(
+                    "id",
+                    &game::Player::SetId,
+                    &game::Player::GetId,
+                    sql::primary_key().autoincrement()
+                ),
+                sql::make_column(
+                    "name",
+                    &game::Player::SetName,
+                    &game::Player::GetName
+                )
             ),
 
             // ---- Chat messages ----
@@ -57,3 +66,5 @@ namespace http
         Storage m_db = CreateStorage(kDbFile);
     };
 }
+
+#endif // CHAT_STORAGE_H
