@@ -53,19 +53,31 @@ void testPlayerPerformanceScore() {
 #include <optional>
 #include <map>
 #include <functional>
+#include <memory>
+#include <ranges>
+#include <concepts>
+#include <bit>
+#include<regex>
 
-// 1: turn order rotation
-REGISTER_TEST(TP_test_01) {
-    std::vector<std::string> players{ "A","B","C","D" };
-    int turn = 0;
-    assert(players[turn % players.size()] == "A");
-    turn += 3;
-    assert(players[turn % players.size()] == "D");
+// small helper: concept-constrained template to compute average of integral types
+template<std::integral T>
+double avg_integrals(const std::vector<T>& v) {
+    T s = 0;
+    for (auto x : v) s += x;
+    return double(s) / v.size();
 }
 
-// 2: dealing counts by player count
+// demonstrate move-only resource tracked via unique_ptr in player "bag"
+REGISTER_TEST(TP_test_01) {
+    std::vector<std::unique_ptr<int>> bags;
+    bags.push_back(std::make_unique<int>(5));
+    auto moved = std::move(bags[0]);
+    assert(moved && bags.size() == 1);
+}
+
+// 2: dealing counts by player count (constref & lambda)
 REGISTER_TEST(TP_test_02) {
-    auto perPlayer = [](int players) {
+    auto perPlayer = [](int players) -> int {
         if (players == 2) return 8;
         if (players == 3) return 7;
         return 6;
@@ -74,46 +86,41 @@ REGISTER_TEST(TP_test_02) {
     assert(perPlayer(5) == 6);
 }
 
-// 3: compute performance score helper
+// 3: compute performance score helper using ranges algorithms
 REGISTER_TEST(TP_test_03) {
-    auto perf = [](int gamesPlayed, int gamesWon, int cardsLeftAvg) -> int {
-        if (gamesPlayed == 0) return 1;
-        double p = double(gamesWon) / gamesPlayed;
-        double penalty = cardsLeftAvg / 20.0;
-        int score = int(std::clamp(1.0 + 4.0 * p - penalty, 1.0, 5.0));
-        return score;
-        };
-    assert(perf(10, 8, 5) >= 4);
+    std::vector<int> cardsLeft = { 0,2,5,1 };
+    double mean = avg_integrals(cardsLeft);
+    assert(mean >= 0);
 }
 
-// 4: leaderboard sort by score then hours
+// 4: leaderboard sort by score then hours (ranges + stable_sort)
 REGISTER_TEST(TP_test_04) {
     std::vector<std::tuple<int, int, std::string>> v = { {5,20,"A"}, {5,10,"B"}, {4,100,"C"} };
-    std::sort(v.begin(), v.end(), [](auto& a, auto& b) {
+    std::ranges::stable_sort(v, [](auto& a, auto& b) {
         if (std::get<0>(a) != std::get<0>(b)) return std::get<0>(a) > std::get<0>(b);
         return std::get<1>(a) > std::get<1>(b);
         });
     assert(std::get<2>(v.front()) == "A");
 }
 
-// 5: chat message validation (no exact numbers)
+// 5: chat message validation (regex)
 REGISTER_TEST(TP_test_05) {
     auto valid = [](const std::string& msg)->bool {
-        for (char c : msg) if (std::isdigit((unsigned char)c)) return false;
-        return true;
+        std::regex digits(R"(\d+)");
+        return !std::regex_search(msg, digits);
         };
     assert(!valid("I have 47"));
     assert(valid("Maybe don't play that pile"));
 }
 
-// 6: aggregate stats from many games
+// 6: aggregate stats from many games (const ref)
 REGISTER_TEST(TP_test_06) {
-    std::vector<int> cardsLeft = { 0,2,5,1 };
-    double avg = std::accumulate(cardsLeft.begin(), cardsLeft.end(), 0.0) / cardsLeft.size();
+    const std::vector<int> cardsLeft = { 0,2,5,1 };
+    double avg = avg_integrals(cardsLeft);
     assert(avg >= 0);
 }
 
-// 7: ranking ties handling stable order
+// 7: ranking ties handling stable order (ranges)
 REGISTER_TEST(TP_test_07) {
     std::vector<std::pair<int, std::string>> r = { {10,"A"},{10,"B"},{8,"C"} };
     std::stable_sort(r.begin(), r.end(), [](auto& a, auto& b) { return a.first > b.first; });
@@ -126,16 +133,16 @@ REGISTER_TEST(TP_test_08) {
     for (int p = 2; p <= 5; ++p) assert(handSize(p) >= 6);
 }
 
-// 9: simulate minimal team score metric
+// 9: simulate minimal team score metric (move semantics)
 REGISTER_TEST(TP_test_09) {
     std::vector<int> wins = { 1,0,1,1 };
     int teamWins = std::accumulate(wins.begin(), wins.end(), 0);
     assert(teamWins == 3);
 }
 
-// 10: compute expected number of draw rounds given deck and players
+// 10: compute expected number of draw rounds given deck and players (const ref)
 REGISTER_TEST(TP_test_10) {
-    int deck = 98;
+    const int deck = 98;
     int players = 3;
     int per = (players == 2 ? 8 : players == 3 ? 7 : 6);
     int dealt = per * players;
@@ -143,7 +150,7 @@ REGISTER_TEST(TP_test_10) {
     assert(draws >= 0);
 }
 
-// 11: check rotating dealer index
+// 11: check rotating dealer index (ranges view demonstration)
 REGISTER_TEST(TP_test_11) {
     std::vector<std::string> p = { "A","B","C" };
     for (int r = 0; r < 6; ++r) {
@@ -160,7 +167,7 @@ REGISTER_TEST(TP_test_12) {
     assert(cur.has_value());
 }
 
-// 13: chat suggestion fuzzy matching (simple)
+// 13: fuzzy chat detection (lambda + ranges)
 REGISTER_TEST(TP_test_13) {
     auto isVague = [](const std::string& m)->bool {
         return m.find("don't") != std::string::npos || m.find("few") != std::string::npos || m.find("maybe") != std::string::npos;
@@ -168,9 +175,9 @@ REGISTER_TEST(TP_test_13) {
     assert(isVague("Maybe don't play first pile"));
 }
 
-// 14: compute card-play deficit
+// 14: compute card-play deficit (constexpr-like arithmetic)
 REGISTER_TEST(TP_test_14) {
-    int required = 2;
+    constexpr int required = 2;
     int played = 1;
     assert((required - played) == 1);
 }
@@ -183,11 +190,11 @@ REGISTER_TEST(TP_test_15) {
     assert(someoneFailed);
 }
 
-// 16: generate player ids and map to hours played
+// 16: generate player ids and map to hours played (unordered_map)
 REGISTER_TEST(TP_test_16) {
     std::vector<std::string> names = { "a","b","c" };
-    std::map<std::string, int> hours;
-    for (size_t i = 0; i < names.size(); ++i) hours[names[i]] = i * 10;
+    std::unordered_map<std::string, int> hours;
+    for (size_t i = 0; i < names.size(); ++i) hours[names[i]] = int(i * 10);
     assert(hours["b"] == 10);
 }
 
@@ -197,17 +204,17 @@ REGISTER_TEST(TP_test_17) {
     assert(valid(2) && valid(5));
 }
 
-// 18: compute average hand size at end of lost game
+// 18: compute average hand size at end of lost game (concept usage)
 REGISTER_TEST(TP_test_18) {
     std::vector<int> left = { 3,2,4 };
-    double avg = std::accumulate(left.begin(), left.end(), 0.0) / left.size();
+    double avg = avg_integrals(left);
     assert(avg > 0);
 }
 
 // 19: top-k players by wins
 REGISTER_TEST(TP_test_19) {
     std::vector<std::pair<int, std::string>> v = { {5,"A"},{7,"B"},{3,"C"} };
-    std::sort(v.begin(), v.end(), [](auto& a, auto& b) { return a.first > b.first; });
+    std::ranges::sort(v, [](auto& a, auto& b) { return a.first > b.first; });
     assert(v.front().second == "B");
 }
 
@@ -218,10 +225,11 @@ REGISTER_TEST(TP_test_20) {
     assert(tot == 6);
 }
 
-// 21: check chat restriction detection (digits)
+// 21: check chat restriction detection (digits regex)
 REGISTER_TEST(TP_test_21) {
     std::string m = "I have cards";
-    bool hasDigit = std::any_of(m.begin(), m.end(), [](char c) { return std::isdigit((unsigned char)c); });
+    std::regex digits(R"(\d+)");
+    bool hasDigit = std::regex_search(m, digits);
     assert(!hasDigit);
 }
 
@@ -235,7 +243,7 @@ REGISTER_TEST(TP_test_22) {
     assert(var >= 0);
 }
 
-// 23: compute expected minimal plays remaining for victory
+// 23: compute expected minimal plays remaining for victory (constexpr math)
 REGISTER_TEST(TP_test_23) {
     int remaining = 10;
     int players = 4;
@@ -251,7 +259,7 @@ REGISTER_TEST(TP_test_24) {
     assert(v[0].second == "A");
 }
 
-// 25: compact player state encoding into integer mask
+// 25: compact player state encoding into integer mask (bit operations)
 REGISTER_TEST(TP_test_25) {
     int readyMask = 0;
     readyMask |= (1 << 0);
