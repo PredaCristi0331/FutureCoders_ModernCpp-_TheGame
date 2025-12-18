@@ -197,6 +197,34 @@ bool DatabaseManager::setSessionRunning(int sessionId, const std::string& start_
     }
 }
 
+bool DatabaseManager::finishSession(int sessionId,
+                                    bool won,
+                                    int cards_left_in_draw,
+                                    int total_moves,
+                                    const std::string& end_time,
+                                    std::int64_t duration_seconds) {
+    auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == sessionId));
+    if (sessions.empty()) return false;
+
+    auto s = sessions.front();
+    if (s.status == GameStatus::Finished) return false;
+
+    s.status = GameStatus::Finished;
+    s.won = won;
+    s.cards_left_in_draw = cards_left_in_draw;
+    s.total_moves = total_moves;
+    s.end_time = end_time;
+    s.duration_seconds = std::max<std::int64_t>(0, duration_seconds);
+
+    try {
+        storage().update(s);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
 
 void DatabaseManager::savePlayerStats(const PlayerGameStats& stats)
 {
