@@ -110,29 +110,27 @@ bool DatabaseManager::registerUser(const std::string& username, const std::strin
 }
 
 
-std::optional<User> DatabaseManager::loginUser(const std::string& username,
-    const std::string& password)
-{
-    auto users = storage().get_all<User>(
-        sqlite_orm::where(sqlite_orm::c(&User::username) == username)
-    );
-
-    if (users.empty()) {
-        return std::nullopt;
-    }
+std::optional<User> DatabaseManager::loginUser(const std::string& username, const std::string& password) {
+    auto users = storage().get_all<User>(where(c(&User::username) == username));
+    if (users.empty()) return std::nullopt;
 
     User u = users.front();
-    if (u.password != password) {
-        return std::nullopt;
-    }
+
+    if (!u.password.empty() && u.password != password) return std::nullopt;
+
     return u;
 }
 
 
-int DatabaseManager::createWaitingSession(const GameSession& session)
-{
-    GameSession s = session;
-    s.id = 0;
+int DatabaseManager::createWaitingSession(const std::string& created_at) {
+    GameSession s{};
+    s.created_at = created_at;
+    s.status = GameStatus::Waiting;
+    s.num_players = 0;
+    s.won = false;
+    s.cards_left_in_draw = 0;
+    s.total_moves = 0;
+    s.duration_seconds = 0;
 
     auto rowid = storage().insert(s);
     return static_cast<int>(rowid);
