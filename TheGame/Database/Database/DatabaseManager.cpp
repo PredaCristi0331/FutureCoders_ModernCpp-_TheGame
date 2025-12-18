@@ -136,6 +136,46 @@ int DatabaseManager::createWaitingSession(const std::string& created_at) {
     return static_cast<int>(rowid);
 }
 
+bool DatabaseManager::addPlayerToSession(int sessionId, int userId, bool isHost) {
+    auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == sessionId));
+    if (sessions.empty()) return false;
+
+    GameSession sess = sessions.front();
+    if (sess.status != GameStatus::Waiting) return false;
+    if (sess.num_players >= 5) return false;
+
+    auto existing = storage().get_all<PlayerGameStats>(
+        where(c(&PlayerGameStats::game_session_id) == sessionId &&
+            c(&PlayerGameStats::user_id) == userId)
+    );
+    if (!existing.empty()) return false;
+
+    try {
+        storage().begin_transaction();
+
+        sess.num_players += 1;
+        storage().update(sess);
+
+        PlayerGameStats p{};
+        p.user_id = userId;
+        p.game_session_id = sessionId;
+        p.is_host = isHost;
+        p.final_cards_in_hand = 0;
+        p.moves_played = 0;
+        p.won = false;
+
+        storage().insert(p);
+
+        storage().commit();
+        return true;
+    }
+    catch (...) {
+        try { storage().rollback(); }
+        catch (...) {}
+        return false;
+    }
+}
+
 
 void DatabaseManager::savePlayerStats(const PlayerGameStats& stats)
 {
