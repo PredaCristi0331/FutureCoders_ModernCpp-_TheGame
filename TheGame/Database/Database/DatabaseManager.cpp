@@ -176,6 +176,27 @@ bool DatabaseManager::addPlayerToSession(int sessionId, int userId, bool isHost)
     }
 }
 
+bool DatabaseManager::setSessionRunning(int sessionId, const std::string& start_time) {
+    auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == sessionId));
+    if (sessions.empty()) return false;
+
+    auto s = sessions.front();
+    if (s.status != GameStatus::Waiting) return false;
+
+    if (s.num_players < 2) return false;
+
+    s.status = GameStatus::Running;
+    s.start_time = start_time;
+
+    try {
+        storage().update(s);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
 
 void DatabaseManager::savePlayerStats(const PlayerGameStats& stats)
 {
