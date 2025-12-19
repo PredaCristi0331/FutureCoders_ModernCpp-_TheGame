@@ -1,7 +1,10 @@
 #include "GameBoardWindow.h"
 #include "GameClient.h"
 #include "CardWidget.h"
+#include "PileWidget.h"
+#include "OpponentWidget.h"
 #include <QSplitter>
+#include <QMessageBox>
 
 GameBoardWindow::GameBoardWindow(GameClient* client, QWidget* parent)
     : QWidget(parent)
@@ -27,18 +30,66 @@ void GameBoardWindow::setupUI() {
     
     // 1. Opponents Area (Top)
     opponentsArea = new QWidget(this);
-    opponentsArea->setFixedHeight(100);
-    auto* oppLabel = new QLabel("Adversari (Zona de sus)", opponentsArea);
-    oppLabel->setAlignment(Qt::AlignCenter);
-    auto* oppLayout = new QVBoxLayout(opponentsArea);
-    oppLayout->addWidget(oppLabel);
+    opponentsArea->setFixedHeight(120);
+    auto* oppLayout = new QHBoxLayout(opponentsArea);
+    oppLayout->setAlignment(Qt::AlignCenter);
+    oppLayout->setSpacing(30);
+
+    // Mock Opponents for now (Will be dynamic later)
+    QStringList mockNames = {"Alex", "Maria", "John"};
+    for (const auto& name : mockNames) {
+        auto* opp = new OpponentWidget(name, this);
+        opponents.push_back(opp);
+        oppLayout->addWidget(opp);
+    }
     
     // 2. Piles Area (Center)
     pilesArea = new QWidget(this);
-    auto* pileLabel = new QLabel("Teancuri de cărți (Centru)", pilesArea);
-    pileLabel->setAlignment(Qt::AlignCenter);
-    auto* pileLayout = new QVBoxLayout(pilesArea);
-    pileLayout->addWidget(pileLabel);
+    auto* pileLayout = new QHBoxLayout(pilesArea);
+    pileLayout->setAlignment(Qt::AlignCenter);
+    pileLayout->setSpacing(20);
+
+    // Create 4 piles: 2 Ascending, 2 Descending
+    // Order: Asc, Asc, Deck, Desc, Desc
+    
+    // Ascending 1
+    auto* p1 = new PileWidget(PileType::Ascending_1_to_99, this);
+    piles.push_back(p1);
+    pileLayout->addWidget(p1);
+    
+    // Ascending 2
+    auto* p2 = new PileWidget(PileType::Ascending_1_to_99, this);
+    piles.push_back(p2);
+    pileLayout->addWidget(p2);
+
+    // Deck Center
+    auto* deckContainer = new QVBoxLayout();
+    deckLabel = new QLabel("🂠", this); // Card back unicode
+    deckLabel->setStyleSheet("font-size: 64px; color: #6c5ce7;");
+    deckLabel->setAlignment(Qt::AlignCenter);
+    
+    cardsRemainingLabel = new QLabel("98", this);
+    cardsRemainingLabel->setAlignment(Qt::AlignCenter);
+    cardsRemainingLabel->setStyleSheet("font-weight: bold; font-size: 16px;");
+    
+    deckContainer->addWidget(deckLabel);
+    deckContainer->addWidget(cardsRemainingLabel);
+    pileLayout->addLayout(deckContainer);
+
+    // Descending 1
+    auto* p3 = new PileWidget(PileType::Descending_100_to_2, this);
+    piles.push_back(p3);
+    pileLayout->addWidget(p3);
+    
+    // Descending 2
+    auto* p4 = new PileWidget(PileType::Descending_100_to_2, this);
+    piles.push_back(p4);
+    pileLayout->addWidget(p4);
+
+    // Connect signals
+    for (auto* p : piles) {
+        connect(p, &PileWidget::clicked, this, &GameBoardWindow::onPileClicked);
+    }
     
     // 3. Hand Area (Bottom)
     handArea = new QWidget(this);
@@ -116,7 +167,13 @@ void GameBoardWindow::onCardClicked(int value) {
     // Logic to play card to follow...
 }
 
-void GameBoardWindow::onSendChatClicked() {
+void GameBoardWindow::onPileClicked(PileType type) {
+    if (selectedHandIndex != -1) {
+        // Here we would implement the logic to play the card
+        // GameClient::PlayCard(...)
+        QMessageBox::information(this, "Acțiune", "Ai încercat să joci o carte!");
+    }
+}
     QString msg = chatInput->text().trimmed();
     if (msg.isEmpty()) return;
 
