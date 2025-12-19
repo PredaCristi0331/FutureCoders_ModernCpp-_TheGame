@@ -20,8 +20,21 @@ void ProfileWindow::setUsername(const QString& username) {
     }
     // Mock stats generation based on username hash or random for now
     if (statsLabel) {
-        statsLabel->setText(QString("Nivel: 5\nJocuri Câștigate: 12\nJocuri Pierdute: 3\nData Înregistrării: %1")
-            .arg(QDate::currentDate().addDays(-30).toString("dd.MM.yyyy")));
+        // Mock data matching requirements
+        int hoursPlayed = 12;
+        int score = 4; // 1-5 scale
+        
+        QString stars = "";
+        for(int i=0; i<5; ++i) stars += (i < score ? "★" : "☆");
+        
+        statsLabel->setText(QString(
+            "Nivel: 5\n"
+            "Ore Jucate: %1\n"
+            "Scor Performanță: %2 (%3)\n"
+            "Jocuri Câștigate: 12\n"
+            "Data Înregistrării: %4"
+        ).arg(hoursPlayed).arg(score).arg(stars)
+         .arg(QDate::currentDate().addDays(-30).toString("dd.MM.yyyy")));
     }
 }
 
