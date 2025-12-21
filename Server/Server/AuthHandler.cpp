@@ -24,22 +24,55 @@ namespace http
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
+        // Validate JSON body
         auto body = crow::json::load(req.body);
-        std::string username = "";
-        if (body.has("username")) {
-            username = body["username"].s();
+        if (!body)
+        {
+            crow::json::wvalue error;
+            error["error"] = "Invalid JSON format";
+            error["message"] = "Request body must be valid JSON";
+            return crow::response(400, error);
         }
 
+        // Validate username field exists
+        if (!body.has("username"))
+        {
+            crow::json::wvalue error;
+            error["error"] = "Missing field";
+            error["message"] = "Username field is required";
+            return crow::response(400, error);
+        }
+
+        std::string username = body["username"].s();
+
+        // Validate username not empty
         if (username.empty())
         {
-            return crow::response(400, "Username required");
+            crow::json::wvalue error;
+            error["error"] = "Invalid username";
+            error["message"] = "Username cannot be empty";
+            return crow::response(400, error);
         }
 
+        // Validate username length
+        if (username.length() < 3)
+        {
+            crow::json::wvalue error;
+            error["error"] = "Invalid username";
+            error["message"] = "Username must be at least 3 characters long";
+            return crow::response(400, error);
+        }
+
+        // Check if user already exists
         if (m_users.find(username) != m_users.end())
         {
-            return crow::response(409, "User already exists");
+            crow::json::wvalue error;
+            error["error"] = "User exists";
+            error["message"] = "A user with this username already exists";
+            return crow::response(409, error);
         }
 
+        // Create new user
         User user;
         user.username = username;
         user.sessionToken = GenerateToken(username);
@@ -51,6 +84,7 @@ namespace http
         response["username"] = username;
         response["token"] = user.sessionToken;
         response["status"] = "registered";
+        response["message"] = "User registered successfully";
 
         return crow::response(200, response);
     }
@@ -59,21 +93,44 @@ namespace http
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
+        // Validate JSON body
         auto body = crow::json::load(req.body);
-        std::string username = "";
-        if (body.has("username")) {
-            username = body["username"].s();
+        if (!body)
+        {
+            crow::json::wvalue error;
+            error["error"] = "Invalid JSON format";
+            error["message"] = "Request body must be valid JSON";
+            return crow::response(400, error);
         }
 
+        // Validate username field exists
+        if (!body.has("username"))
+        {
+            crow::json::wvalue error;
+            error["error"] = "Missing field";
+            error["message"] = "Username field is required";
+            return crow::response(400, error);
+        }
+
+        std::string username = body["username"].s();
+
+        // Validate username not empty
         if (username.empty())
         {
-            return crow::response(400, "Username required");
+            crow::json::wvalue error;
+            error["error"] = "Invalid username";
+            error["message"] = "Username cannot be empty";
+            return crow::response(400, error);
         }
 
+        // Check if user exists
         auto it = m_users.find(username);
         if (it == m_users.end())
         {
-            return crow::response(404, "User not found");
+            crow::json::wvalue error;
+            error["error"] = "Authentication failed";
+            error["message"] = "User not found. Please register first";
+            return crow::response(404, error);
         }
 
         // Generate new token on login
@@ -90,6 +147,7 @@ namespace http
         response["username"] = username;
         response["token"] = newToken;
         response["status"] = "logged_in";
+        response["message"] = "Login successful";
 
         return crow::response(200, response);
     }
@@ -98,17 +156,37 @@ namespace http
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
+        // Validate JSON body
         auto body = crow::json::load(req.body);
-        std::string token = "";
-        if (body.has("token")) {
-            token = body["token"].s();
+        if (!body)
+        {
+            crow::json::wvalue error;
+            error["error"] = "Invalid JSON format";
+            error["message"] = "Request body must be valid JSON";
+            return crow::response(400, error);
         }
 
+        // Validate token field exists
+        if (!body.has("token"))
+        {
+            crow::json::wvalue error;
+            error["error"] = "Missing field";
+            error["message"] = "Token field is required";
+            return crow::response(400, error);
+        }
+
+        std::string token = body["token"].s();
+
+        // Validate token not empty
         if (token.empty())
         {
-            return crow::response(400, "Token required");
+            crow::json::wvalue error;
+            error["error"] = "Invalid token";
+            error["message"] = "Token cannot be empty";
+            return crow::response(400, error);
         }
 
+        // Find and invalidate token
         auto tokenIt = m_tokens.find(token);
         if (tokenIt != m_tokens.end())
         {
@@ -121,10 +199,16 @@ namespace http
                 userIt->second.sessionToken = "";
             }
 
-            return crow::response(200, "{\"status\":\"logged_out\"}");
+            crow::json::wvalue response;
+            response["status"] = "logged_out";
+            response["message"] = "Logout successful";
+            return crow::response(200, response);
         }
 
-        return crow::response(404, "Invalid token");
+        crow::json::wvalue error;
+        error["error"] = "Invalid token";
+        error["message"] = "Token not found or already expired";
+        return crow::response(404, error);
     }
 
     bool AuthHandler::ValidateToken(const std::string& token)
