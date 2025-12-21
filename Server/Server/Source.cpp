@@ -16,10 +16,16 @@ import TheGame;
 #include "ChatHeandler.h"
 #include "GameSessionManager.h"
 #include "AuthHandler.h"
+#include "Logger.h"
+#include "ServerStats.h"
 
 int main()
 {
     crow::SimpleApp app;
+
+    app.loglevel(crow::LogLevel::Info);
+
+    http::Logger::Log(http::Logger::Level::SUCCESS, "Server starting on port 18080...");
 
     // Chat
     http::ChatStorage storage;
@@ -28,27 +34,42 @@ int main()
     
     http::GameSessionManager gameManager;
     http::AuthHandler auth;
+    http::StatsManager stats;
+
+    http::Logger::Log(http::Logger::Level::INFO, "All handlers initialized successfully");
 
     // Auth endpoints
     CROW_ROUTE(app, "/auth/register").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        return auth.Register(req);
+        http::Logger::LogRequest("POST", "/auth/register");
+        auto response = auth.Register(req);
+        http::Logger::LogResponse(response.code, "/auth/register");
+        return response;
             });
 
     CROW_ROUTE(app, "/auth/login").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        return auth.Login(req);
+        http::Logger::LogRequest("POST", "/auth/login");
+        auto response = auth.Login(req);
+        http::Logger::LogResponse(response.code, "/auth/login");
+        return response;
             });
 
     CROW_ROUTE(app, "/auth/logout").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        return auth.Logout(req);
+        http::Logger::LogRequest("POST", "/auth/logout");
+        auto response = auth.Logout(req);
+        http::Logger::LogResponse(response.code, "/auth/logout");
+        return response;
             });
 
     // Chat endpoints
     CROW_ROUTE(app, "/chat").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        return chat.PostMessage(req);
+        http::Logger::LogRequest("POST", "/chat");
+        auto response = chat.PostMessage(req);
+        http::Logger::LogResponse(response.code, "/chat");
+        return response;
             });
 
     CROW_ROUTE(app, "/chat/<int>")
@@ -59,7 +80,10 @@ int main()
     // Game session endpoints
     CROW_ROUTE(app, "/game/create").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        return gameManager.CreateGame(req);
+        http::Logger::LogRequest("POST", "/game/create");
+        auto response = gameManager.CreateGame(req);
+        http::Logger::LogResponse(response.code, "/game/create");
+        return response;
             });
 
 
@@ -78,6 +102,15 @@ int main()
     CROW_ROUTE(app, "/games")
         ([&]() -> crow::response {
         return gameManager.GetAllGames();
+            });
+
+    // Server stats endpoint
+    CROW_ROUTE(app, "/stats")
+        ([&]() -> crow::response {
+        http::Logger::LogRequest("GET", "/stats");
+        auto response = stats.GetStats();
+        http::Logger::LogResponse(response.code, "/stats");
+        return response;
             });
 
     app.port(18080).multithreaded().run();
