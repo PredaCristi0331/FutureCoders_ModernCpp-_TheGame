@@ -74,6 +74,12 @@ namespace
         stor.sync_schema(true);
         return stor;
     }
+
+    static int clampScore(int s) {
+        if (s < 1) return 1;
+        if (s > 5) return 5;
+        return s;
+    }
 }
 
 
@@ -84,53 +90,139 @@ void DatabaseManager::init(const std::string& dbPath)
 }
 
 
-bool DatabaseManager::registerUser(const std::string& username,
-    const std::string& password)
-{
-    auto existing = storage().get_all<User>(
-        sqlite_orm::where(sqlite_orm::c(&User::username) == username)
-    );
-
-    if (!existing.empty()) {
-        return false;
-    }
+bool DatabaseManager::registerUser(const std::string& username, const std::string& password) {
+    auto existing = storage().get_all<User>(where(c(&User::username) == username));
+    if (!existing.empty()) return false;
 
     User u{};
-    u.id = 0;
     u.username = username;
     u.password = password;
+    u.hours_played_seconds = 0;
+    u.performance_score = 1;
 
-    storage().insert(u);
-    return true;
+    try {
+        storage().insert(u);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
 }
 
 
-std::optional<User> DatabaseManager::loginUser(const std::string& username,
-    const std::string& password)
-{
-    auto users = storage().get_all<User>(
-        sqlite_orm::where(sqlite_orm::c(&User::username) == username)
-    );
-
-    if (users.empty()) {
-        return std::nullopt;
-    }
+std::optional<User> DatabaseManager::loginUser(const std::string& username, const std::string& password) {
+    auto users = storage().get_all<User>(where(c(&User::username) == username));
+    if (users.empty()) return std::nullopt;
 
     User u = users.front();
-    if (u.password != password) {
-        return std::nullopt;
-    }
+
+    if (!u.password.empty() && u.password != password) return std::nullopt;
+
     return u;
 }
 
 
-int DatabaseManager::createWaitingSession(const GameSession& session)
-{
-    GameSession s = session;
-    s.id = 0;
+int DatabaseManager::createWaitingSession(const std::string& created_at) {
+    GameSession s{};
+    s.created_at = created_at;
+    s.status = GameStatus::Waiting;
+    s.num_players = 0;
+    s.won = false;
+    s.cards_left_in_draw = 0;
+    s.total_moves = 0;
+    s.duration_seconds = 0;
 
     auto rowid = storage().insert(s);
     return static_cast<int>(rowid);
+}
+
+bool DatabaseManager::addPlayerToSession(int sessionId, int userId, bool isHost) {
+    auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == sessionId));
+    if (sessions.empty()) return false;
+
+    GameSession sess = sessions.front();
+    if (sess.status != GameStatus::Waiting) return false;
+    if (sess.num_players >= 5) return false;
+
+    auto existing = storage().get_all<PlayerGameStats>(
+        where(c(&PlayerGameStats::game_session_id) == sessionId &&
+            c(&PlayerGameStats::user_id) == userId)
+    );
+    if (!existing.empty()) return false;
+
+    try {
+        storage().begin_transaction();
+
+        sess.num_players += 1;
+        storage().update(sess);
+
+        PlayerGameStats p{};
+        p.user_id = userId;
+        p.game_session_id = sessionId;
+        p.is_host = isHost;
+        p.final_cards_in_hand = 0;
+        p.moves_played = 0;
+        p.won = false;
+
+        storage().insert(p);
+
+        storage().commit();
+        return true;
+    }
+    catch (...) {
+        try { storage().rollback(); }
+        catch (...) {}
+        return false;
+    }
+}
+
+bool DatabaseManager::setSessionRunning(int sessionId, const std::string& start_time) {
+    auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == sessionId));
+    if (sessions.empty()) return false;
+
+    auto s = sessions.front();
+    if (s.status != GameStatus::Waiting) return false;
+
+    if (s.num_players < 2) return false;
+
+    s.status = GameStatus::Running;
+    s.start_time = start_time;
+
+    try {
+        storage().update(s);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
+}
+
+bool DatabaseManager::finishSession(int sessionId,
+                                    bool won,
+                                    int cards_left_in_draw,
+                                    int total_moves,
+                                    const std::string& end_time,
+                                    std::int64_t duration_seconds) {
+    auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == sessionId));
+    if (sessions.empty()) return false;
+
+    auto s = sessions.front();
+    if (s.status == GameStatus::Finished) return false;
+
+    s.status = GameStatus::Finished;
+    s.won = won;
+    s.cards_left_in_draw = cards_left_in_draw;
+    s.total_moves = total_moves;
+    s.end_time = end_time;
+    s.duration_seconds = std::max<std::int64_t>(0, duration_seconds);
+
+    try {
+        storage().update(s);
+        return true;
+    }
+    catch (...) {
+        return false;
+    }
 }
 
 

@@ -11,6 +11,10 @@
 
 class GameClient;
 class CardWidget;
+class PileWidget;
+#include "PileWidget.h"
+class OpponentWidget;
+#include "OpponentWidget.h"
 
 class GameBoardWindow : public QWidget {
     Q_OBJECT
@@ -24,6 +28,7 @@ public:
 private slots:
     void onSendChatClicked();
     void onCardClicked(int value);
+    void onPileClicked(PileType type);
 
 private:
     GameClient* gameClient;
@@ -40,8 +45,13 @@ private:
     QLineEdit* chatInput{nullptr};
     QPushButton* sendChatButton{nullptr};
 
-    // Hand Widgets
-    std::vector<CardWidget*> handCards;
+    // Piles
+    std::vector<PileWidget*> piles;
+    QLabel* deckLabel{nullptr};
+    QLabel* cardsRemainingLabel{nullptr};
+
+    // Opponents
+    std::vector<OpponentWidget*> opponents;
 
     void setupUI();
     void setupChatUI(QVBoxLayout* rightLayout);
