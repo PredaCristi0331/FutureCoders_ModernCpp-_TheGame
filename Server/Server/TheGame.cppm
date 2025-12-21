@@ -15,7 +15,7 @@ namespace game {
 	{
 	private:
 		GameTable m_gameTable;
-		bool m_lostGame = false;
+		bool m_lostGame;
 		GameStats m_stats;
 	public:
 		TheGame();

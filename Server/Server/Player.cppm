@@ -25,5 +25,6 @@ namespace game {
 		void ShowCards();
 		Card CardLaidDown(int card);
 		void RemoveCard(Card card);
+		bool HasCard(int cardNumber) const;
 	};
 }

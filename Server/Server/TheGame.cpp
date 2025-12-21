@@ -3,7 +3,7 @@ import <iostream>;
 import <vector>;
 using namespace game;
 
-game::TheGame::TheGame()
+game::TheGame::TheGame():m_lostGame(false)
 {
 }
 
@@ -79,6 +79,13 @@ void game::TheGame::Rund()
                 std::cin.clear();
                 std::cin.ignore(10000, '\n');
                 std::cout << "Invalid input.\n";
+                continue;
+            }
+
+            // ----- check if player owns the card -----
+            if (!m_gameTable.GetGamer(i).HasCard(cardSelect))
+            {
+                std::cout << "You don't have that card. Choose one from your hand.\n";
                 continue;
             }
 
@@ -222,7 +229,7 @@ void game::TheGame::FinalGame(bool status)
 
 bool game::TheGame::Lost()
 {
-	return false;
+	return m_lostGame;
 }
 
 bool game::TheGame::GetLostGame()

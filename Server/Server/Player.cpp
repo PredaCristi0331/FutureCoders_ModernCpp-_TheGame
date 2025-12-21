@@ -87,3 +87,13 @@ void game::Player::RemoveCard(Card card)
 		m_cards.erase(it, m_cards.end());
 	}
 }
+
+bool game::Player::HasCard(int cardNumber) const
+{
+	for (const Card& card : m_cards)
+	{
+		if (card.GetCardNumber() == cardNumber)
+			return true;
+	}
+	return false;
+}
