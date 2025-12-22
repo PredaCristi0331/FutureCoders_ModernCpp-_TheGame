@@ -225,20 +225,69 @@ bool DatabaseManager::finishSession(int sessionId,
     }
 }
 
+std::optional<int> DatabaseManager::findBestWaitingSessionForUser(int userId, int tolerance) {
+    auto uopt = getUserByIdSafe(userId);
+    if (!uopt) return std::nullopt;
+    int score = uopt->performance_score;
 
-void DatabaseManager::savePlayerStats(const PlayerGameStats& stats)
-{
-    PlayerGameStats s = stats;
-    s.id = 0;
+    auto waiting = storage().get_all<GameSession>(
+        where(c(&GameSession::status) == GameStatus::Waiting &&
+            c(&GameSession::num_players) < 5)
+    );
+    if (waiting.empty()) return std::nullopt;
 
-    storage().insert(s);
+    struct Candidate { int sessionId; int diff; };
+    std::vector<Candidate> cand;
+
+    for (auto& sess : waiting) {
+        auto hosts = storage().get_all<PlayerGameStats>(
+            where(c(&PlayerGameStats::game_session_id) == sess.id &&
+                c(&PlayerGameStats::is_host) == true)
+        );
+
+        int baseScore = score;
+        if (!hosts.empty()) {
+            auto hostUser = getUserByIdSafe(hosts.front().user_id);
+            if (hostUser) baseScore = hostUser->performance_score;
+        }
+
+        int diff = std::abs(baseScore - score);
+        cand.push_back({ sess.id, diff });
+    }
+
+    std::sort(cand.begin(), cand.end(), [](auto a, auto b) {
+        if (a.diff != b.diff) return a.diff < b.diff;
+        return a.sessionId < b.sessionId;
+        });
+
+    for (auto& cnd : cand) {
+        if (cnd.diff <= tolerance) return cnd.sessionId;
+    }
+    return cand.front().sessionId;
 }
 
 
-User DatabaseManager::getUserById(int userId)
-{
-    return storage().get<User>(userId);
+void DatabaseManager::savePlayerStats(const PlayerGameStats& stats) {
+    auto rows = storage().get_all<PlayerGameStats>(
+        where(c(&PlayerGameStats::user_id) == stats.user_id &&
+            c(&PlayerGameStats::game_session_id) == stats.game_session_id)
+    );
+    if (rows.empty()) {
+        PlayerGameStats s = stats;
+        s.id = 0;
+        storage().insert(s);
+        return;
+    }
+
+    auto s = rows.front();
+    s.final_cards_in_hand = stats.final_cards_in_hand;
+    s.moves_played = stats.moves_played;
+    s.won = stats.won;
+
+    storage().update(s);
 }
+
+
 
 
 UserProfile DatabaseManager::getUserProfile(int userId)
