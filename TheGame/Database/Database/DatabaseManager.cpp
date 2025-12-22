@@ -357,3 +357,32 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
     profile.performance_score = clampScore(score);
     return profile;
 }
+
+
+void DatabaseManager::recomputeAndUpdateUserStats(int userId) {
+    auto profile = getUserProfile(userId);
+
+    auto userSessions = storage().get_all<PlayerGameStats>(
+        where(c(&PlayerGameStats::user_id) == userId)
+    );
+
+    std::int64_t totalSec = 0;
+    for (const auto& p : userSessions) {
+        auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == p.game_session_id));
+        if (!sessions.empty()) {
+            const auto& s = sessions.front();
+            if (s.status == GameStatus::Finished) {
+                totalSec += std::max<std::int64_t>(0, s.duration_seconds);
+            }
+        }
+    }
+
+    auto uopt = getUserByIdSafe(userId);
+    if (!uopt) return;
+
+    auto u = *uopt;
+    u.hours_played_seconds = totalSec;
+    u.performance_score = profile.performance_score;
+
+    storage().update(u);
+}
