@@ -386,3 +386,20 @@ void DatabaseManager::recomputeAndUpdateUserStats(int userId) {
 
     storage().update(u);
 }
+
+void DatabaseManager::addChatMessage(const ChatMessage& msg) {
+    ChatMessage m = msg;
+    m.id = 0;
+    storage().insert(m);
+}
+
+std::vector<ChatMessage> DatabaseManager::getChatMessages(int sessionId, int limit) {
+    if (limit <= 0) limit = 200;
+
+    auto msgs = storage().get_all<ChatMessage>(
+        where(c(&ChatMessage::game_session_id) == sessionId),
+        order_by(&ChatMessage::id).desc(),
+        sqlite_orm::limit(limit)
+    );
+    return msgs;
+}
