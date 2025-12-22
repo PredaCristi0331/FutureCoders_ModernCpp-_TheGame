@@ -297,27 +297,26 @@ std::optional<User> DatabaseManager::getUserByIdSafe(int userId) {
 }
 
 
-UserProfile DatabaseManager::getUserProfile(int userId)
-{
+UserProfile DatabaseManager::getUserProfile(int userId) {
     UserProfile profile{};
 
-    try {
-        User user = storage().get<User>(userId);
-        profile.username = user.username;
-    }
-    catch (...) {
+    auto uopt = getUserByIdSafe(userId);
+    if (!uopt) {
         profile.username = "(unknown)";
+        return profile;
     }
+    profile.username = uopt->username;
+    profile.hours_played_seconds = uopt->hours_played_seconds;
 
     auto stats = storage().get_all<PlayerGameStats>(
-        sqlite_orm::where(sqlite_orm::c(&PlayerGameStats::user_id) == userId)
+        where(c(&PlayerGameStats::user_id) == userId)
     );
 
     profile.games_played = static_cast<int>(stats.size());
 
     int gamesWon = 0;
     int gamesLost = 0;
-    int sumCardsOnLoss = 0;
+    long long sumCardsOnLoss = 0;
     int lossCount = 0;
 
     for (const auto& s : stats) {
@@ -334,20 +333,16 @@ UserProfile DatabaseManager::getUserProfile(int userId)
     profile.games_won = gamesWon;
     profile.games_lost = gamesLost;
 
-    if (lossCount > 0) {
-        profile.avg_cards_on_loss =
-            static_cast<double>(sumCardsOnLoss) / lossCount;
-    }
-    else {
-        profile.avg_cards_on_loss = 0.0;
-    }
+    profile.avg_cards_on_loss = (lossCount > 0)
+        ? (static_cast<double>(sumCardsOnLoss) / lossCount)
+        : 0.0;
 
     double winRate = 0.0;
     if (profile.games_played > 0) {
         winRate = static_cast<double>(gamesWon) / profile.games_played;
     }
 
-    int score = 0;
+    int score = 1;
     if (profile.games_played > 0) {
         if (winRate < 0.2)       score = 1;
         else if (winRate < 0.4)  score = 2;
@@ -355,7 +350,10 @@ UserProfile DatabaseManager::getUserProfile(int userId)
         else if (winRate < 0.8)  score = 4;
         else                     score = 5;
     }
-    profile.performance_score = score;
 
+    if (gamesLost > 0 && profile.avg_cards_on_loss >= 10.0) score -= 1;
+    if (gamesLost > 0 && profile.avg_cards_on_loss >= 15.0) score -= 1;
+
+    profile.performance_score = clampScore(score);
     return profile;
 }
