@@ -287,7 +287,14 @@ void DatabaseManager::savePlayerStats(const PlayerGameStats& stats) {
     storage().update(s);
 }
 
-
+std::optional<User> DatabaseManager::getUserByIdSafe(int userId) {
+    try {
+        return storage().get<User>(userId);
+    }
+    catch (...) {
+        return std::nullopt;
+    }
+}
 
 
 UserProfile DatabaseManager::getUserProfile(int userId)
