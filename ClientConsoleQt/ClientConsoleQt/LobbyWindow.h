@@ -8,6 +8,9 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QTimer>
+#include <QFrame>
+#include <QCheckBox>
+#include <QProgressBar>
 
 /**
  * LobbyWindow - Fereastra de lobby cu selecție dificultate
@@ -38,6 +41,9 @@ private slots:
     void onLogoutClicked();
     void onDifficultyChanged(int index);
     void onMatchmakingTimeout();
+    // Inline Slots
+    void toggleSettings();
+    void onThemeChanged(int index);
 
 private:
     QString currentUsername;
@@ -52,7 +58,25 @@ private:
     QPushButton* rulesButton;
     QPushButton* logoutButton;
     QLabel* statusLabel;
-    QTimer* matchmakingTimer;
+
+    // Settings UI (Inline Commit 1)
+    QWidget* settingsOverlay{nullptr};
+    QCheckBox* soundToggle{nullptr};
+    QCheckBox* musicToggle{nullptr};
+    QComboBox* themeCombo{nullptr};
+    QPushButton* closeSettingsBtn{nullptr};
+    QPushButton* settingsButton{nullptr}; // New button in main UI
+
+    // Waiting UI (Inline Commit 2)
+    QWidget* waitingOverlay{nullptr};
+    QLabel* waitingStatusLabel{nullptr};
+    QProgressBar* waitingProgress{nullptr};
+    QPushButton* cancelWaitBtn{nullptr};
+
+    void setupSettingsUI();
+    void setupWaitingUI();
+    void showWaitingScreen();
+    void hideWaitingScreen();
 
     void setupUI();
     void applyStyles();
