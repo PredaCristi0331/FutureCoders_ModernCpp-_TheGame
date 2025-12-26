@@ -5,6 +5,8 @@
 #include <QListWidget>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <vector>
@@ -57,4 +59,9 @@ private:
     void setupChatUI(QVBoxLayout* rightLayout);
     void applyStyles();
     void updateHandUI(); // Mock for now
+
+    // Inline Commit 3: Notification Logic
+    QLabel* notificationLabel{nullptr};
+    void showNotification(const QString& message);
+    void setupNotificationUI();
 };

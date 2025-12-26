@@ -11,7 +11,11 @@ GameBoardWindow::GameBoardWindow(GameClient* client, QWidget* parent)
     , gameClient(client)
 {
     setupUI();
+    setupNotificationUI(); // Inline Init
     applyStyles();
+    
+    // Test Notification
+    QTimer::singleShot(1000, [this](){ showNotification("Bun venit la masă!"); });
 }
 
 GameBoardWindow::~GameBoardWindow() = default;
@@ -212,4 +216,61 @@ void GameBoardWindow::applyStyles() {
      if (opponentsArea) opponentsArea->setStyleSheet("background-color: #16213e; border-bottom: 2px solid #0f3460;");
      if (pilesArea) pilesArea->setStyleSheet("background-color: #1a1a2e;");
      if (handArea) handArea->setStyleSheet("background-color: #16213e; border-top: 2px solid #0f3460;");
+     
+     if (notificationLabel) {
+         notificationLabel->setStyleSheet(
+            "background-color: rgba(0, 0, 0, 0.7);"
+            "color: #fab1a0;"
+            "font-size: 20px;"
+            "font-weight: bold;"
+            "padding: 10px 20px;"
+            "border-radius: 10px;"
+            "border: 1px solid #fab1a0;"
+         );
+     }
+}
+
+// --- Inline Commit 3: Notification Logic ---
+void GameBoardWindow::setupNotificationUI() {
+    notificationLabel = new QLabel(this);
+    notificationLabel->setAlignment(Qt::AlignCenter);
+    notificationLabel->setAttribute(Qt::WA_TransparentForMouseEvents); // Click through
+    notificationLabel->hide();
+    
+    // Center logic handled in resizeEvent usually, or manual geometry
+    notificationLabel->setFixedWidth(400);
+    notificationLabel->setFixedHeight(60);
+    // Position mock
+    notificationLabel->move(width()/2 - 200, 150); 
+}
+
+void GameBoardWindow::showNotification(const QString& message) {
+    if(!notificationLabel) return;
+    
+    notificationLabel->setText(message);
+    notificationLabel->adjustSize();
+    
+    // Re-center
+    int w = notificationLabel->width() + 40;
+    int h = notificationLabel->height() + 20;
+    notificationLabel->setFixedSize(w, h);
+    notificationLabel->move((this->width() - w)/2, 80); // Top center
+    
+    notificationLabel->show();
+    
+    // Fade effect
+    auto* effect = new QGraphicsOpacityEffect(notificationLabel);
+    notificationLabel->setGraphicsEffect(effect);
+    
+    auto* anim = new QPropertyAnimation(effect, "opacity");
+    anim->setDuration(2500);
+    anim->setStartValue(1.0);
+    anim->setEndValue(0.0);
+    anim->setEasingCurve(QEasingCurve::InExpo);
+    
+    connect(anim, &QPropertyAnimation::finished, [this]() {
+        notificationLabel->hide();
+    });
+    
+    anim->start(QAbstractAnimation::DeleteWhenStopped);
 }
