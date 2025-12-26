@@ -8,6 +8,13 @@ LobbyWindow::LobbyWindow(QWidget* parent)
     , matchmakingTimer(nullptr)
 {
     setupUI();
+    setupSettingsUI(); // Init Settings
+    setupWaitingUI();  // Init Waiting
+    
+    // Default hidden
+    if(settingsOverlay) settingsOverlay->hide();
+    if(waitingOverlay) waitingOverlay->hide();
+
     applyStyles();
     connectSignals();
 }
@@ -79,6 +86,14 @@ void LobbyWindow::setupUI() {
     // Style specific
     rulesButton->setStyleSheet("background-color: #0f3460;"); // Distinct color
     buttonLayout->addWidget(rulesButton);
+
+    buttonLayout->addWidget(rulesButton);
+    
+    // Add small Settings button near Rules
+    settingsButton = new QPushButton("⚙ Setări", this);
+    settingsButton->setMinimumHeight(45);
+    settingsButton->setStyleSheet("background-color: #2d3436; color: #dfe6e9;");
+    buttonLayout->addWidget(settingsButton);
 
     logoutButton = new QPushButton("Logout", this);
     logoutButton->setMinimumHeight(45);
@@ -181,6 +196,7 @@ void LobbyWindow::connectSignals() {
     connect(playButton, &QPushButton::clicked, this, &LobbyWindow::onPlayClicked);
     connect(profileButton, &QPushButton::clicked, this, &LobbyWindow::onProfileClicked);
     connect(rulesButton, &QPushButton::clicked, this, &LobbyWindow::onRulesClicked);
+    connect(settingsButton, &QPushButton::clicked, this, &LobbyWindow::toggleSettings);
     connect(logoutButton, &QPushButton::clicked, this, &LobbyWindow::onLogoutClicked);
     connect(difficultyComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &LobbyWindow::onDifficultyChanged);
@@ -207,16 +223,13 @@ void LobbyWindow::onPlayClicked() {
         playButton->setStyleSheet("background-color: #d35400; color: white; border-radius: 8px; font-weight: bold; font-size: 14px;");
 
         // Afișează status de matchmaking
-        updateStatus("Căutare joc...", "#4ecdc4");
+        // updateStatus("Căutare joc...", "#4ecdc4"); // Old
         
-        // Simulează matchmaking cu lambda
-        if (!matchmakingTimer) {
-            matchmakingTimer = new QTimer(this);
-            matchmakingTimer->setSingleShot(true);
-            connect(matchmakingTimer, &QTimer::timeout, this, &LobbyWindow::onMatchmakingTimeout);
-        }
+        // New Waiting UI
+        showWaitingScreen();
         
-        matchmakingTimer->start(2000);
+        // Logic moved to showWaitingScreen()
+        // timer logic...
     }
 }
 
@@ -247,5 +260,135 @@ void LobbyWindow::updateStatus(const QString& message, const QString& color) {
     statusLabel->setText(message);
     statusLabel->setStyleSheet(QString("color: %1; font-size: 14px; font-weight: bold;").arg(color));
     statusLabel->show();
+}
+
+// --- Inline Commit 1: Settings Logic ---
+void LobbyWindow::setupSettingsUI() {
+    settingsOverlay = new QWidget(this);
+    settingsOverlay->setGeometry(rect()); // Cover entire window
+    settingsOverlay->setStyleSheet("background-color: rgba(0,0,0,0.85);");
+    
+    auto* layout = new QVBoxLayout(settingsOverlay);
+    layout->setAlignment(Qt::AlignCenter);
+    
+    auto* container = new QFrame(settingsOverlay);
+    container->setFixedSize(300, 400);
+    container->setStyleSheet("background-color: #1a1a2e; border: 2px solid #533483; border-radius: 10px;");
+    
+    auto* innerLayout = new QVBoxLayout(container);
+    
+    auto* title = new QLabel("SETĂRI", container);
+    title->setAlignment(Qt::AlignCenter);
+    title->setStyleSheet("font-size: 24px; font-weight: bold; color: #533483; border: none;");
+    
+    soundToggle = new QCheckBox("Efecte Sonore", container);
+    soundToggle->setChecked(true);
+    
+    musicToggle = new QCheckBox("Muzică Fundal", container);
+    musicToggle->setChecked(true);
+    
+    auto* themeLabel = new QLabel("Temă:", container);
+    themeLabel->setStyleSheet("border:none;");
+    themeCombo = new QComboBox(container);
+    themeCombo->addItem("Dark Space");
+    themeCombo->addItem("Light Minimal");
+    connect(themeCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &LobbyWindow::onThemeChanged);
+    
+    closeSettingsBtn = new QPushButton("Salvează & Închide", container);
+    connect(closeSettingsBtn, &QPushButton::clicked, this, &LobbyWindow::toggleSettings);
+    
+    innerLayout->addWidget(title);
+    innerLayout->addSpacing(20);
+    innerLayout->addWidget(soundToggle);
+    innerLayout->addWidget(musicToggle);
+    innerLayout->addSpacing(10);
+    innerLayout->addWidget(themeLabel);
+    innerLayout->addWidget(themeCombo);
+    innerLayout->addStretch();
+    innerLayout->addWidget(closeSettingsBtn);
+    
+    layout->addWidget(container);
+}
+
+void LobbyWindow::toggleSettings() {
+    if (settingsOverlay->isVisible()) {
+        settingsOverlay->hide();
+    } else {
+        settingsOverlay->setGeometry(rect()); // Ensure it covers updated size
+        settingsOverlay->show();
+        settingsOverlay->raise();
+    }
+}
+
+void LobbyWindow::onThemeChanged(int index) {
+    // Mock theme implementation
+    if (index == 1) {
+       // Light Mode Mock
+    }
+}
+
+// --- Inline Commit 2: Waiting Logic ---
+void LobbyWindow::setupWaitingUI() {
+    waitingOverlay = new QWidget(this);
+    waitingOverlay->setGeometry(rect());
+    waitingOverlay->setStyleSheet("background-color: #1a1a2e;"); // Solid cover
+    
+    auto* layout = new QVBoxLayout(waitingOverlay);
+    layout->setAlignment(Qt::AlignCenter);
+    
+    waitingStatusLabel = new QLabel("Se caută jucători...", waitingOverlay);
+    waitingStatusLabel->setAlignment(Qt::AlignCenter);
+    waitingStatusLabel->setStyleSheet("font-size: 24px; color: #4ecdc4;");
+    
+    waitingProgress = new QProgressBar(waitingOverlay);
+    waitingProgress->setRange(0, 30);
+    waitingProgress->setValue(0);
+    waitingProgress->setFixedWidth(300);
+    waitingProgress->setStyleSheet(
+        "QProgressBar { border: 2px solid #533483; border-radius: 5px; text-align: center; }"
+        "QProgressBar::chunk { background-color: #533483; }"
+    );
+    
+    cancelWaitBtn = new QPushButton("Anulează", waitingOverlay);
+    cancelWaitBtn->setFixedWidth(150);
+    cancelWaitBtn->setStyleSheet("background-color: #e74c3c;");
+    connect(cancelWaitBtn, &QPushButton::clicked, this, &LobbyWindow::hideWaitingScreen);
+    
+    layout->addWidget(waitingStatusLabel);
+    layout->addSpacing(20);
+    layout->addWidget(waitingProgress);
+    layout->addSpacing(30);
+    layout->addWidget(cancelWaitBtn);
+}
+
+void LobbyWindow::showWaitingScreen() {
+    waitingOverlay->setGeometry(rect());
+    waitingOverlay->show();
+    waitingOverlay->raise();
+    
+    // Start progress
+    waitingProgress->setValue(0);
+    // Reuse existing timer but connect to progress update
+    disconnect(matchmakingTimer, nullptr, nullptr, nullptr);
+    connect(matchmakingTimer, &QTimer::timeout, [this]() {
+        int val = waitingProgress->value();
+        if (val >= 30) {
+            onMatchmakingTimeout();
+        } else {
+            waitingProgress->setValue(val + 1);
+            if (val % 5 == 0) {
+                waitingStatusLabel->setText(QString("Jucători găsiți: %1/4").arg(1 + val/10));
+            }
+        }
+    });
+    matchmakingTimer->start(100); // Fast for demo (should be 1000 for seconds)
+}
+
+void LobbyWindow::hideWaitingScreen() {
+    waitingOverlay->hide();
+    matchmakingTimer->stop();
+    playButton->setEnabled(true);
+    profileButton->setEnabled(true);
+    settingsButton->setEnabled(true); // Re-enable
 }
 
