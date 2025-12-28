@@ -18,6 +18,9 @@ import TheGame;
 #include "AuthHandler.h"
 #include "Logger.h"
 #include "ServerStats.h"
+#include "RateLimiter.h"
+#include "HealthCheck.h"
+#include "RequestValidator.h"
 
 int main()
 {
@@ -35,6 +38,8 @@ int main()
     http::GameSessionManager gameManager;
     http::AuthHandler auth;
     http::StatsManager stats;
+    http::RateLimiter authLimiter(5, 5, 60);
+    http::HealthCheck healthCheck("1.0.0");
 
     http::Logger::Log(http::Logger::Level::INFO, "All handlers initialized successfully");
 
@@ -42,6 +47,15 @@ int main()
     CROW_ROUTE(app, "/auth/register").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
         http::Logger::LogRequest("POST", "/auth/register");
+        
+        std::string ip = req.remote_ip_address;
+        if (!authLimiter.AllowRequest(ip))
+        {
+            http::Logger::Log(http::Logger::Level::WARNING, "Rate limit exceeded for IP: " + ip);
+            return http::RequestValidator::CreateErrorResponse(429, "Too many requests", 
+                "Rate limit exceeded. Please try again later.");
+        }
+        
         auto response = auth.Register(req);
         http::Logger::LogResponse(response.code, "/auth/register");
         return response;
@@ -50,6 +64,15 @@ int main()
     CROW_ROUTE(app, "/auth/login").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
         http::Logger::LogRequest("POST", "/auth/login");
+        
+        std::string ip = req.remote_ip_address;
+        if (!authLimiter.AllowRequest(ip))
+        {
+            http::Logger::Log(http::Logger::Level::WARNING, "Rate limit exceeded for IP: " + ip);
+            return http::RequestValidator::CreateErrorResponse(429, "Too many requests",
+                "Rate limit exceeded. Please try again later.");
+        }
+        
         auto response = auth.Login(req);
         http::Logger::LogResponse(response.code, "/auth/login");
         return response;
@@ -102,6 +125,12 @@ int main()
     CROW_ROUTE(app, "/games")
         ([&]() -> crow::response {
         return gameManager.GetAllGames();
+            });
+
+    // Health check endpoint
+    CROW_ROUTE(app, "/health")
+        ([&]() -> crow::response {
+        return healthCheck.GetHealth();
             });
 
     // Server stats endpoint
