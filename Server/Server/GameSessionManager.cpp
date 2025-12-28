@@ -1,4 +1,5 @@
 #include "GameSessionManager.h"
+#include "RequestValidator.h"
 
 namespace http
 {
@@ -6,10 +7,23 @@ namespace http
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
+        auto validationResult = http::RequestValidator::ValidateJSON(req);
+        if (validationResult)
+        {
+            return std::move(validationResult.errorResponse);
+        }
+
         auto body = crow::json::load(req.body);
         int maxPlayers = 4;
-        if (body.has("maxPlayers")) {
+        
+        if (body.has("maxPlayers"))
+        {
             maxPlayers = body["maxPlayers"].i();
+            if (maxPlayers < 2 || maxPlayers > 8)
+            {
+                return http::RequestValidator::CreateErrorResponse(400, "Invalid maxPlayers",
+                    "maxPlayers must be between 2 and 8");
+            }
         }
 
         GameSession session;
@@ -35,20 +49,35 @@ namespace http
         auto it = m_sessions.find(gameId);
         if (it == m_sessions.end())
         {
-            return crow::response(404, "Game not found");
+            return http::RequestValidator::CreateErrorResponse(404, "Game not found",
+                "No game exists with ID " + std::to_string(gameId));
         }
 
         GameSession& session = it->second;
 
         if (session.currentPlayers >= session.maxPlayers)
         {
-            return crow::response(400, "Game is full");
+            return http::RequestValidator::CreateErrorResponse(400, "Game is full",
+                "This game has reached maximum capacity");
+        }
+
+        auto validationResult = http::RequestValidator::ValidateJSON(req);
+        if (validationResult)
+        {
+            return std::move(validationResult.errorResponse);
         }
 
         auto body = crow::json::load(req.body);
         std::string playerName = "Anonymous";
-        if (body.has("playerName")) {
+        
+        if (body.has("playerName"))
+        {
             playerName = body["playerName"].s();
+            auto lengthValidation = http::RequestValidator::ValidateStringLength(playerName, "playerName", 1, 20);
+            if (lengthValidation)
+            {
+                return std::move(lengthValidation.errorResponse);
+            }
         }
 
         session.playerNames.push_back(playerName);
@@ -75,7 +104,8 @@ namespace http
         auto it = m_sessions.find(gameId);
         if (it == m_sessions.end())
         {
-            return crow::response(404, "Game not found");
+            return http::RequestValidator::CreateErrorResponse(404, "Game not found",
+                "No game exists with ID " + std::to_string(gameId));
         }
 
         const GameSession& session = it->second;
