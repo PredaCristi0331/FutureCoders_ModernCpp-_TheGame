@@ -1,7 +1,5 @@
 #pragma once
-#pragma once
 
-// 25 test declarations for TestUtils
 void TU_test_01();
 void TU_test_02();
 void TU_test_03();
@@ -27,3 +25,13 @@ void TU_test_22();
 void TU_test_23();
 void TU_test_24();
 void TU_test_25();
+void TU_test_26();
+void TU_test_27();
+void TU_test_28();
+void TU_test_29();
+void TU_test_30();
+void TU_test_31();
+void TU_test_32();
+void TU_test_33();
+void TU_test_34();
+void TU_test_35();
