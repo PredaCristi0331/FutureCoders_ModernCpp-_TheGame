@@ -5,9 +5,6 @@ void testInventoryRemove();
 void testInventorySearch();
 void testInventorySort();
 
-#pragma once
-
-// 25 test declarations for TestInventory (hand/inventory ops, no entities)
 void TI_test_01();
 void TI_test_02();
 void TI_test_03();
@@ -33,3 +30,13 @@ void TI_test_22();
 void TI_test_23();
 void TI_test_24();
 void TI_test_25();
+void TI_test_26();
+void TI_test_27();
+void TI_test_28();
+void TI_test_29();
+void TI_test_30();
+void TI_test_31();
+void TI_test_32();
+void TI_test_33();
+void TI_test_34();
+void TI_test_35();
