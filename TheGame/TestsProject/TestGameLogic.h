@@ -5,8 +5,7 @@ void testDescendingRuleLogic();
 void testBackwardsTrickLogic();
 void testWinLoseLogic();
 
-
-// 25 test declarations for TestGameLogic (logic-only, no entities)
+// Test declarations for TestGameLogic (now up to 35 tests)
 void TG_test_01();
 void TG_test_02();
 void TG_test_03();
@@ -32,3 +31,13 @@ void TG_test_22();
 void TG_test_23();
 void TG_test_24();
 void TG_test_25();
+void TG_test_26();
+void TG_test_27();
+void TG_test_28();
+void TG_test_29();
+void TG_test_30();
+void TG_test_31();
+void TG_test_32();
+void TG_test_33();
+void TG_test_34();
+void TG_test_35();
