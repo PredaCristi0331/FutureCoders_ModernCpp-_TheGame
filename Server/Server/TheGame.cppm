@@ -39,5 +39,6 @@ namespace game {
 		// Statistics methods
 		GameStats GetStats() const;
 		void PrintStats() const;
+		void RecordMove(int playerId, bool specialMove);
 	};
 }

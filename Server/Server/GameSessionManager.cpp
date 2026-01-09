@@ -148,4 +148,20 @@ namespace http
 
         return crow::response(200, games);
     }
+    crow::response GameSessionManager::StartGame(int gameId)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_sessions.find(gameId);
+        if (it == m_sessions.end()) return crow::response(404, "Game not found");
+        it->second.status = "playing";
+        return crow::response(200, "Game started");
+    }
+    crow::response GameSessionManager::EndGame(int gameId)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_sessions.find(gameId);
+        if (it == m_sessions.end()) return crow::response(404, "Game not found");
+        it->second.status = "finished";
+        return crow::response(200, "Game ended");
+    }
 }

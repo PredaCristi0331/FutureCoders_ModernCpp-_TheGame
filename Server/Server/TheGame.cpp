@@ -252,3 +252,13 @@ void game::TheGame::PrintStats() const
 	std::cout << "Special Moves (Backward Tricks): " << m_stats.specialMoves << "\n";
 	std::cout << "=======================\n\n";
 }
+
+void game::TheGame::RecordMove(int playerId, bool specialMove)
+{
+    m_stats.totalMoves++;
+    m_playerStats[playerId].cardsPlayed++;
+    if (specialMove) {
+        m_stats.specialMoves++;
+        m_playerStats[playerId].specialMoves++;
+    }
+}

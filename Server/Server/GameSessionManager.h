@@ -28,5 +28,7 @@ namespace http
         crow::response JoinGame(int gameId, const crow::request& req);
         crow::response GetGameInfo(int gameId);
         crow::response GetAllGames();
+        crow::response StartGame(int gameId);
+        crow::response EndGame(int gameId);
     };
 }
