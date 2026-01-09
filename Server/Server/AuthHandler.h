@@ -35,5 +35,6 @@ namespace http
         std::string HashPassword(const std::string& password);
         crow::response RegisterWithPassword(const crow::request& req);
         bool CheckPassword(const std::string& username, const std::string& password);
+        crow::response GetProfile(const std::string& token);
     };
 }

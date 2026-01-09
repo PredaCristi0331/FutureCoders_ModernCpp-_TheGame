@@ -249,4 +249,16 @@ namespace http
         if (it == m_users.end()) return false;
         return it->second.hashedPassword == HashPassword(password);
     }
+    crow::response AuthHandler::GetProfile(const std::string& token)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_tokens.find(token);
+        if (it == m_tokens.end()) return crow::response(401, "Invalid token");
+
+        const User& user = m_users[it->second];
+        crow::json::wvalue res;
+        res["username"] = user.username;
+        res["gamesPlayed"] = user.gamesPlayed; // presupun că adaugi câmp
+        return crow::response{ res };
+    }
 }

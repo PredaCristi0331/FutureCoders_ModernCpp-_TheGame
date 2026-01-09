@@ -1,4 +1,4 @@
-module GameTable;
+﻿module GameTable;
 using namespace game;
 import <iostream>;
 import <vector>;
@@ -264,4 +264,19 @@ bool game::GameTable::IsGameWon()
 		if (gamer.GetCards().size() > 0) return false;
 	}
 	return true;
+}
+
+bool game::GameTable::IsMoveAllowed(Card card, int stackNumber)
+{
+	const Card* top = nullptr;
+	switch (stackNumber) {
+	case 1: if (!m_increasingFirst.empty()) top = &m_increasingFirst.back(); break;
+	case 2: if (!m_increasingSecond.empty()) top = &m_increasingSecond.back(); break;
+	case 3: if (!m_decreasingFirst.empty()) top = &m_decreasingFirst.back(); break;
+	case 4: if (!m_decreasingSecond.empty()) top = &m_decreasingSecond.back(); break;
+	}
+	if (!top) return true; // dacă stiva e goală
+	int diff = card.GetCardNumber() - top->GetCardNumber();
+	if (stackNumber <= 2) return diff > 0 || diff == -10; // increasing
+	return diff < 0 || diff == 10; // decreasing
 }

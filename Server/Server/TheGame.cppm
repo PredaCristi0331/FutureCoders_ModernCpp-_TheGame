@@ -1,6 +1,14 @@
 export module TheGame;
 
 export import GameTable;
+import <map>;
+
+struct PlayerStats {
+	int cardsPlayed = 0;
+	int specialMoves = 0;
+};
+
+std::map<int, PlayerStats> m_playerStats; // playerId -> stats
 
 namespace game {
 	// Game statistics structure

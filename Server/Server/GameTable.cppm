@@ -55,6 +55,8 @@ namespace game {
 		std::vector<int> GetValidMoves(Card card);
 		
 		bool IsGameWon();
+
+		bool IsMoveAllowed(Card card, int stackNumber);
 	private:
 		int m_nrGamer;
 		std::vector<Player>m_Gamers;
