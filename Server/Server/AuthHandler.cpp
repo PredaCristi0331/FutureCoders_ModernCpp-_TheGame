@@ -1,4 +1,4 @@
-#include "AuthHandler.h"
+﻿#include "AuthHandler.h"
 #include <random>
 #include <sstream>
 #include <iomanip>
@@ -215,5 +215,38 @@ namespace http
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_tokens.find(token) != m_tokens.end();
+    }
+    std::string AuthHandler::HashPassword(const std::string& password)
+    {
+        std::hash<std::string> hasher;
+        size_t hashValue = hasher(password);
+
+        std::stringstream ss;
+        ss << std::hex << hashValue;
+        return ss.str();
+    }
+    crow::response AuthHandler::RegisterWithPassword(const crow::request& req)
+    {
+        auto data = crow::json::load(req.body);
+        std::string username = data["username"].s();
+        std::string password = data["password"].s();
+
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (m_users.find(username) != m_users.end())
+            return crow::response(409, "User already exists");
+
+        User user;
+        user.username = username;
+        user.sessionToken = "";
+        user.hashedPassword = HashPassword(password); // adaugă hashedPassword în User
+        m_users[username] = user;
+        return crow::response(200, "User registered");
+    }
+    bool AuthHandler::CheckPassword(const std::string& username, const std::string& password)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_users.find(username);
+        if (it == m_users.end()) return false;
+        return it->second.hashedPassword == HashPassword(password);
     }
 }

@@ -3,6 +3,9 @@
 #include <string>
 #include <map>
 #include <mutex>
+#include <sstream>
+#include <iomanip>
+#include <functional>
 
 namespace http
 {
@@ -10,6 +13,8 @@ namespace http
     {
         std::string username;
         std::string sessionToken;
+        std::string hashedPassword;
+        int gamesPlayed = 0;
     };
 
     class AuthHandler
@@ -26,5 +31,9 @@ namespace http
         crow::response Login(const crow::request& req);
         crow::response Logout(const crow::request& req);
         bool ValidateToken(const std::string& token);
+
+        std::string HashPassword(const std::string& password);
+        crow::response RegisterWithPassword(const crow::request& req);
+        bool CheckPassword(const std::string& username, const std::string& password);
     };
 }
