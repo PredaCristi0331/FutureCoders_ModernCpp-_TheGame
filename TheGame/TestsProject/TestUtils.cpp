@@ -19,19 +19,18 @@
 #include <span>
 #include <regex>
 #include <memory>
-#include <bit>            // std::bit_cast
-#include <ranges>         // ranges library
-#include <concepts>       // concepts for template constraints
+#include <bit>            
+#include <ranges>         
+#include <concepts>       
 #include <stdexcept>
 #include <thread>
-#include <unordered_set>
-
+#include<unordered_set>
 using namespace std::string_literals;
 
-// constinit example (C++20)
+
 constinit static int g_constinit_counter = 7;
 
-// Generic helpers (local to this translation unit)
+
 static std::vector<std::string> split_impl(const std::string& s, char d) {
     std::vector<std::string> out;
     std::istringstream ss(s);
@@ -46,42 +45,37 @@ static std::vector<int> make_range(int a, int b) {
     return v;
 }
 
-// Variadic template helper (demonstrates fold expressions)
+
 template<typename... Args>
 int variadic_sum(Args... args) {
     return (args + ... + 0);
 }
 
-// Template constrained by concept (C++20)
+
 template<std::integral T>
 T double_integral(T v) {
     return v * 2;
 }
 
-// Small consteval function (C++20)
+
 consteval int consteval_square(int x) { return x * x; }
 
-// 1 - 25 (existing tests) ---------------------------------------------------
-// (kept same as previously defined tests 01..25, omitted here for brevity in explanation)
-// We include them as they were. For brevity in the message we still provide full content:
-// 1
+
 REGISTER_TEST(TU_test_01) {
     const std::string s = "2;5;99";
-    const auto tokens = split_impl(s, ';'); // const ref semantics at call site
+    const auto tokens = split_impl(s, ';'); 
     assert(tokens.size() == 3 && tokens[0] == "2" && tokens[2] == "99");
 }
 
-// 2: shuffle reproducible with seed (move semantics demonstration)
 REGISTER_TEST(TU_test_02) {
     auto deck = make_range(2, 99);
     std::mt19937 rng(42);
     std::shuffle(deck.begin(), deck.end(), rng);
     std::vector<int> moved = std::move(deck);
     assert(moved.size() == 98);
-    assert(deck.empty()); // moved-from should be empty
+    assert(deck.empty()); 
 }
 
-// 3 - 25 (the rest of previously provided tests)
 REGISTER_TEST(TU_test_03) {
     std::optional<int> o;
     assert(!o.has_value());
@@ -252,16 +246,12 @@ REGISTER_TEST(TU_test_24) {
 }
 
 REGISTER_TEST(TU_test_25) {
-    uint32_t x = 0x3f800000u; // bit pattern for float 1.0
+    uint32_t x = 0x3f800000u; 
     float f = std::bit_cast<float>(x);
     assert(f == 1.0f);
 }
 
-// ---------------------------------------------------------------------------
-// New tests added: 26..35 - exception handling, consteval/constinit, async, move semantics
-// ---------------------------------------------------------------------------
 
-// 26: parse-like function that throws on invalid input (exception path)
 REGISTER_TEST(TU_test_26) {
     auto parseIntThrow = [](const std::string& s)->int {
         try {
@@ -288,7 +278,6 @@ REGISTER_TEST(TU_test_26) {
     assert(caught);
 }
 
-// 27: std::regex_error thrown for bad pattern
 REGISTER_TEST(TU_test_27) {
     bool caught = false;
     try {
@@ -301,7 +290,6 @@ REGISTER_TEST(TU_test_27) {
     assert(caught);
 }
 
-// 28: unique_ptr RAII cleanup on exception
 REGISTER_TEST(TU_test_28) {
     bool cleaned = false;
     struct Res { bool* p; Res(bool* q) :p(q) {} ~Res() noexcept { if (p) *p = true; } };
@@ -313,19 +301,15 @@ REGISTER_TEST(TU_test_28) {
     assert(cleaned);
 }
 
-// 29: consteval function correctness (compile-time function used at runtime)
 REGISTER_TEST(TU_test_29) {
     constexpr int sq = consteval_square(6);
     assert(sq == 36);
 }
 
-// 30: constinit global variable present and has expected value
 REGISTER_TEST(TU_test_30) {
-    // g_constinit_counter defined at top
     assert(g_constinit_counter == 7);
 }
 
-// 31: std::async exception propagation
 REGISTER_TEST(TU_test_31) {
     auto fut = std::async(std::launch::async, []() { throw std::runtime_error("async"); return 1; });
     bool catched = false;
@@ -334,7 +318,6 @@ REGISTER_TEST(TU_test_31) {
     assert(catched);
 }
 
-// 32: moving container of unique_ptr leaves source in valid moved-from state
 REGISTER_TEST(TU_test_32) {
     std::vector<std::unique_ptr<int>> a;
     a.push_back(std::make_unique<int>(5));
@@ -343,13 +326,11 @@ REGISTER_TEST(TU_test_32) {
     assert(!b.empty());
 }
 
-// 33: variadic_sum template correctness
 REGISTER_TEST(TU_test_33) {
     assert(variadic_sum(1, 2, 3, 4) == 10);
     assert(variadic_sum() == 0);
 }
 
-// 34: transactional rollback helper (copy & swap) for vector
 REGISTER_TEST(TU_test_34) {
     auto transactional_modify = [](std::vector<int>& c, auto op) {
         std::vector<int> backup = c;
@@ -367,7 +348,6 @@ REGISTER_TEST(TU_test_34) {
     assert((v == std::vector<int>{1, 2, 3}));
 }
 
-// 35: ranges any_of with lambda that may throw but caught outside
 REGISTER_TEST(TU_test_35) {
     std::vector<int> v = { 1,2,3,4 };
     bool threw = false;

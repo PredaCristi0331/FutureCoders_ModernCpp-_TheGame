@@ -23,14 +23,14 @@
 
 using namespace std::string_literals;
 
-// helper to show move-insertion into deque
+
 static std::deque<int> make_deque_moved(std::vector<int> v) {
     std::deque<int> d;
     for (auto& x : v) d.push_back(std::move(x));
     return d;
 }
 
-// simple template for container sum (generic)
+
 template<typename Container>
 auto container_sum(const Container& c) {
     using T = typename Container::value_type;
@@ -39,13 +39,12 @@ auto container_sum(const Container& c) {
     return s;
 }
 
-// variadic template to build vector quickly
+
 template<typename... Ts>
 auto make_vec(Ts... xs) {
     return std::vector{ xs... }; // CTAD
 }
 
-// 1..25 existing tests (kept unchanged) ------------------------------------
 
 REGISTER_TEST(TI_test_01) {
     std::vector<int> hand;
@@ -222,11 +221,7 @@ REGISTER_TEST(TI_test_25) {
     assert(std::regex_search(s, re));
 }
 
-// ---------------------------------------------------------------------------
-// New tests 26..35 - inventory exception handling and integration scenarios
-// ---------------------------------------------------------------------------
 
-// 26: remove non-existing card -> function throws (simulated behavior)
 REGISTER_TEST(TI_test_26) {
     auto remove_card_or_throw = [](std::vector<int>& hand, int val) {
         auto it = std::find(hand.begin(), hand.end(), val);
@@ -240,14 +235,14 @@ REGISTER_TEST(TI_test_26) {
     assert(caught);
 }
 
-// 27: regex validation for item codes
+
 REGISTER_TEST(TI_test_27) {
     std::string code = "ITM-001";
     std::regex re(R"(ITM-\d{3})");
     assert(std::regex_match(code, re));
 }
 
-// 28: ensure shared_ptr items are cleaned when container goes out of scope even on exception
+
 REGISTER_TEST(TI_test_28) {
     bool cleaned = false;
     struct R { bool* p; R(bool* q) :p(q) {} ~R() noexcept { if (p) *p = true; } };
@@ -260,7 +255,7 @@ REGISTER_TEST(TI_test_28) {
     assert(cleaned);
 }
 
-// 29: transactional inventory swap rollback
+
 REGISTER_TEST(TI_test_29) {
     auto transactional_swap = [](std::vector<int>& a, std::vector<int>& b) {
         auto backup_a = a;
@@ -282,19 +277,19 @@ REGISTER_TEST(TI_test_29) {
     assert(rolled && a == std::vector<int>{1}&& b == std::vector<int>{2});
 }
 
-// 30: reserve may throw bad_alloc - simulate by catching bad_alloc
+
 REGISTER_TEST(TI_test_30) {
     std::vector<int> v;
     bool caught = false;
     try {
-        // large reserve may or may not throw; simulate by explicit throw to test path
+        
         throw std::bad_alloc();
     }
     catch (const std::bad_alloc&) { caught = true; }
     assert(caught);
 }
 
-// 31: async background inventory compaction (exception in task propagates)
+
 REGISTER_TEST(TI_test_31) {
     auto fut = std::async(std::launch::async, []() { throw std::runtime_error("compact fail"); return 0; });
     bool catched = false;
@@ -303,17 +298,17 @@ REGISTER_TEST(TI_test_31) {
     assert(catched);
 }
 
-// 32: iterator invalidation detection via throwing helper
+
 REGISTER_TEST(TI_test_32) {
     std::vector<int> v = { 1,2,3 };
     auto it = v.begin();
-    v.push_back(4); // may invalidate
-    bool ok = (it != v.end()); // we don't rely on behavior, just ensure program continues
+    v.push_back(4); 
+    bool ok = (it != v.end()); 
     (void)ok;
     assert(true);
 }
 
-// 33: find item with ranges + lambda that may throw (caught outside)
+
 REGISTER_TEST(TI_test_33) {
     std::vector<int> v = { 1,2,3,4 };
     bool thrown = false;
@@ -326,7 +321,6 @@ REGISTER_TEST(TI_test_33) {
     assert(thrown);
 }
 
-// 34: dedup with exception safety (backup restore)
 REGISTER_TEST(TI_test_34) {
     std::vector<int> hand = { 2,2,3,3 };
     auto backup = hand;
@@ -337,7 +331,7 @@ REGISTER_TEST(TI_test_34) {
     assert(!hand.empty());
 }
 
-// 35: make_vec variadic helper correctness and regex on resulting string
+
 REGISTER_TEST(TI_test_35) {
     auto v = make_vec(11, 22, 33);
     std::ostringstream oss;

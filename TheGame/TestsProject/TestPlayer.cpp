@@ -26,7 +26,6 @@ double avg_integrals(const std::vector<T>& v) {
     return double(s) / v.size();
 }
 
-// 1..25 existing tests (kept unchanged) ------------------------------------
 
 REGISTER_TEST(TP_test_01) {
     std::vector<std::unique_ptr<int>> bags;
@@ -203,16 +202,11 @@ REGISTER_TEST(TP_test_25) {
     assert((readyMask & (1 << 1)) == 0);
 }
 
-// ---------------------------------------------------------------------------
-// New tests 26..35 - player-level exception handling and integration
-// ---------------------------------------------------------------------------
 
-// helper: throw on invalid player index
 static void ensure_valid_player(int idx, int maxPlayers) {
     if (idx < 0 || idx >= maxPlayers) throw std::out_of_range("invalid player");
 }
 
-// 26: invalid player index throws
 REGISTER_TEST(TP_test_26) {
     bool thrown = false;
     try { ensure_valid_player(5, 4); }
@@ -220,7 +214,6 @@ REGISTER_TEST(TP_test_26) {
     assert(thrown);
 }
 
-// 27: dealing function throws on unsupported number of players
 REGISTER_TEST(TP_test_27) {
     auto deal_count = [](int players)->int {
         if (players < 2 || players > 5) throw std::invalid_argument("players");
@@ -232,7 +225,6 @@ REGISTER_TEST(TP_test_27) {
     assert(thrown);
 }
 
-// 28: async player action - exceptions propagate via future
 REGISTER_TEST(TP_test_28) {
     auto fut = std::async(std::launch::async, []() { throw std::runtime_error("action fail"); return 0; });
     bool caught = false;
@@ -241,7 +233,6 @@ REGISTER_TEST(TP_test_28) {
     assert(caught);
 }
 
-// 29: chat validation raising descriptive exception on policy violation
 REGISTER_TEST(TP_test_29) {
     auto validate_chat = [](const std::string& m) {
         std::regex digits(R"(\d+)");
@@ -253,7 +244,6 @@ REGISTER_TEST(TP_test_29) {
     assert(thrown);
 }
 
-// 30: ensure unique_ptr resources released on exception in player context
 REGISTER_TEST(TP_test_30) {
     bool freed = false;
     struct R { bool* p; R(bool* q) :p(q) {} ~R() noexcept { if (p) *p = true; } };
@@ -265,21 +255,18 @@ REGISTER_TEST(TP_test_30) {
     assert(freed);
 }
 
-// 31: ensure fairness metric computation does not throw for edge inputs
 REGISTER_TEST(TP_test_31) {
     std::vector<int> hours = { 0,0,0 };
     double mean = avg_integrals(hours);
     assert(mean == 0.0);
 }
 
-// 32: detect tie ranking stable sort behavior (no exception)
 REGISTER_TEST(TP_test_32) {
     std::vector<std::pair<int, std::string>> v = { {1,"A"},{1,"B"} };
     std::stable_sort(v.begin(), v.end(), [](auto& a, auto& b) { return a.first > b.first; });
     assert(v[0].second == "A");
 }
 
-// 33: player state decode with bit ops - no exception
 REGISTER_TEST(TP_test_33) {
     int mask = 0;
     mask |= (1 << 1);
@@ -287,7 +274,6 @@ REGISTER_TEST(TP_test_33) {
     assert((mask & (1 << 1)) != 0);
 }
 
-// 34: nested futures for player actions - inner exception surfaces
 REGISTER_TEST(TP_test_34) {
     auto f = std::async(std::launch::async, []() {
         return std::async(std::launch::async, []() { throw std::runtime_error("inner"); return 0; }).get();
@@ -297,4 +283,3 @@ REGISTER_TEST(TP_test_34) {
     catch (const std::runtime_error&) { caught = true; }
     assert(caught);
 }
-

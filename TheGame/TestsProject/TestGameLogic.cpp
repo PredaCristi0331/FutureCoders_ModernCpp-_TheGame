@@ -18,6 +18,7 @@
 #include <future>
 #include <thread>
 #include <regex>
+#include <mutex>
 #include <unordered_set>
 
 static bool canPlayAscending(int top, int candidate) {
@@ -44,8 +45,7 @@ static std::vector<int> consume_and_sort(std::vector<int> v) {
     return v;
 }
 
-// 1..25 existing tests (kept unchanged) ------------------------------------
-
+// 1..25 existing tests (kept unchanged)
 REGISTER_TEST(TG_test_01) {
     assert(canPlayAscending(1, 2));
     assert(!canPlayAscending(50, 40));
@@ -235,20 +235,17 @@ REGISTER_TEST(TG_test_25) {
 // async move processing, transactional dealing rollback, regex validation
 // ---------------------------------------------------------------------------
 
-// helper: throws if move illegal
 static void play_card_or_throw(int top, int card) {
     if (!(canPlayAscending(top, card) || canPlayDescending(top, card))) {
         throw std::invalid_argument("illegal move");
     }
 }
 
-// helper: draw from deck or throw underflow
 static int draw_from_deck(std::vector<int>& deck) {
     if (deck.empty()) throw std::out_of_range("deck empty");
     int v = deck.back(); deck.pop_back(); return v;
 }
 
-// 26: illegal move throws
 REGISTER_TEST(TG_test_26) {
     bool caught = false;
     try { play_card_or_throw(50, 25); }
@@ -256,7 +253,6 @@ REGISTER_TEST(TG_test_26) {
     assert(caught);
 }
 
-// 27: drawing from empty deck throws
 REGISTER_TEST(TG_test_27) {
     std::vector<int> deck;
     bool thrown = false;
@@ -265,7 +261,6 @@ REGISTER_TEST(TG_test_27) {
     assert(thrown);
 }
 
-// 28: transactional dealing (rollback on exception)
 REGISTER_TEST(TG_test_28) {
     auto transactional_deal = [](std::vector<int>& deck, std::vector<int>& hand, int n) {
         auto backup_deck = deck;
@@ -288,7 +283,6 @@ REGISTER_TEST(TG_test_28) {
     assert(rolled && hand.empty());
 }
 
-// 29: async play simulation - exceptions propagate via future
 REGISTER_TEST(TG_test_29) {
     auto fut = std::async(std::launch::async, []() { throw std::runtime_error("play fail"); return 0; });
     bool catched = false;
@@ -297,7 +291,6 @@ REGISTER_TEST(TG_test_29) {
     assert(catched);
 }
 
-// 30: regex validate pile input (game frontend)
 REGISTER_TEST(TG_test_30) {
     std::string input = "pile:3";
     std::regex re(R"(pile:(\d+))");
@@ -306,14 +299,12 @@ REGISTER_TEST(TG_test_30) {
     assert(ok && m.size() == 2 && m[1] == "3");
 }
 
-// 31: ensure TopView three-way compare works in sort and exceptions not thrown
 REGISTER_TEST(TG_test_31) {
     std::vector<TopView> v = { {2},{1},{3} };
     std::ranges::sort(v);
     assert(v[0].v == 1);
 }
 
-// 32: ensure move semantics for deck consumption (moved deck is empty)
 REGISTER_TEST(TG_test_32) {
     auto deck = make_range(2, 10);
     auto moved_deck = std::move(deck);
@@ -322,14 +313,12 @@ REGISTER_TEST(TG_test_32) {
 
 
 
-// 34: detect duplicate top values using unordered_set - no exception but logic check
 REGISTER_TEST(TG_test_34) {
     std::vector<int> tops = { 1,1,100,100 };
     std::unordered_set<int> s(tops.begin(), tops.end());
     assert(s.size() == 2);
 }
 
-// 35: stress small concurrent simulation: spawn threads that pop deck concurrently with mutex
 REGISTER_TEST(TG_test_35) {
     std::vector<int> deck = make_range(2, 50);
     std::mutex m;
