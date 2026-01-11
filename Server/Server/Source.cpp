@@ -21,9 +21,6 @@ import TheGame;
 #include "RateLimiter.h"
 #include "HealthCheck.h"
 #include "RequestValidator.h"
-#include "ApiVersion.h"
-#include "RequestTimer.h"
-#include "CorsMiddleware.h"
 
 int main()
 {
@@ -43,20 +40,12 @@ int main()
     http::StatsManager stats;
     http::RateLimiter authLimiter(5, 5, 60);
     http::HealthCheck healthCheck("1.0.0");
-    http::ApiVersion apiVersion("1.0.0", "FutureCoders Game API");
 
     http::Logger::Log(http::Logger::Level::INFO, "All handlers initialized successfully");
-
-    // CORS preflight endpoint
-    CROW_ROUTE(app, "/<path>").methods(crow::HTTPMethod::OPTIONS)
-        ([&](std::string path) -> crow::response {
-        return http::CorsMiddleware::HandlePreflight();
-            });
 
     // Auth endpoints
     CROW_ROUTE(app, "/auth/register").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        http::RequestTimer timer("/auth/register");
         http::Logger::LogRequest("POST", "/auth/register");
         
         std::string ip = req.remote_ip_address;
@@ -68,14 +57,12 @@ int main()
         }
         
         auto response = auth.Register(req);
-        http::CorsMiddleware::AddCorsHeaders(response);
         http::Logger::LogResponse(response.code, "/auth/register");
         return response;
             });
 
     CROW_ROUTE(app, "/auth/login").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        http::RequestTimer timer("/auth/login");
         http::Logger::LogRequest("POST", "/auth/login");
         
         std::string ip = req.remote_ip_address;
@@ -87,17 +74,14 @@ int main()
         }
         
         auto response = auth.Login(req);
-        http::CorsMiddleware::AddCorsHeaders(response);
         http::Logger::LogResponse(response.code, "/auth/login");
         return response;
             });
 
     CROW_ROUTE(app, "/auth/logout").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        http::RequestTimer timer("/auth/logout");
         http::Logger::LogRequest("POST", "/auth/logout");
         auto response = auth.Logout(req);
-        http::CorsMiddleware::AddCorsHeaders(response);
         http::Logger::LogResponse(response.code, "/auth/logout");
         return response;
             });
@@ -105,10 +89,8 @@ int main()
     // Chat endpoints
     CROW_ROUTE(app, "/chat").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        http::RequestTimer timer("/chat");
         http::Logger::LogRequest("POST", "/chat");
         auto response = chat.PostMessage(req);
-        http::CorsMiddleware::AddCorsHeaders(response);
         http::Logger::LogResponse(response.code, "/chat");
         return response;
             });
@@ -121,10 +103,8 @@ int main()
     // Game session endpoints
     CROW_ROUTE(app, "/game/create").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
-        http::RequestTimer timer("/game/create");
         http::Logger::LogRequest("POST", "/game/create");
         auto response = gameManager.CreateGame(req);
-        http::CorsMiddleware::AddCorsHeaders(response);
         http::Logger::LogResponse(response.code, "/game/create");
         return response;
             });
@@ -156,22 +136,9 @@ int main()
     // Server stats endpoint
     CROW_ROUTE(app, "/stats")
         ([&]() -> crow::response {
-        http::RequestTimer timer("/stats");
         http::Logger::LogRequest("GET", "/stats");
         auto response = stats.GetStats();
-        http::CorsMiddleware::AddCorsHeaders(response);
         http::Logger::LogResponse(response.code, "/stats");
-        return response;
-            });
-
-    // API version endpoint
-    CROW_ROUTE(app, "/api/version")
-        ([&]() -> crow::response {
-        http::RequestTimer timer("/api/version");
-        http::Logger::LogRequest("GET", "/api/version");
-        auto response = apiVersion.GetVersion();
-        http::CorsMiddleware::AddCorsHeaders(response);
-        http::Logger::LogResponse(response.code, "/api/version");
         return response;
             });
 
