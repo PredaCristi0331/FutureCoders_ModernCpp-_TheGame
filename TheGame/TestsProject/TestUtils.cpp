@@ -24,13 +24,19 @@
 #include <concepts>       
 #include <stdexcept>
 #include <thread>
-#include<unordered_set>
+#include <filesystem>
+#include <unordered_map>
+#include <unordered_set>
+#include<fstream>
+
+
 using namespace std::string_literals;
+namespace fs = std::filesystem;
 
-
+// constinit example (C++20)
 constinit static int g_constinit_counter = 7;
 
-
+// Generic helpers (local to this translation unit)
 static std::vector<std::string> split_impl(const std::string& s, char d) {
     std::vector<std::string> out;
     std::istringstream ss(s);
@@ -45,25 +51,26 @@ static std::vector<int> make_range(int a, int b) {
     return v;
 }
 
-
+// Variadic template helper (demonstrates fold expressions)
 template<typename... Args>
 int variadic_sum(Args... args) {
     return (args + ... + 0);
 }
 
-
+// Template constrained by concept (C++20)
 template<std::integral T>
 T double_integral(T v) {
     return v * 2;
 }
 
-
+// Small consteval function (C++20)
 consteval int consteval_square(int x) { return x * x; }
+
 
 
 REGISTER_TEST(TU_test_01) {
     const std::string s = "2;5;99";
-    const auto tokens = split_impl(s, ';'); 
+    const auto tokens = split_impl(s, ';'); // const ref semantics at call site
     assert(tokens.size() == 3 && tokens[0] == "2" && tokens[2] == "99");
 }
 
@@ -73,7 +80,7 @@ REGISTER_TEST(TU_test_02) {
     std::shuffle(deck.begin(), deck.end(), rng);
     std::vector<int> moved = std::move(deck);
     assert(moved.size() == 98);
-    assert(deck.empty()); 
+    assert(deck.empty()); // moved-from should be empty
 }
 
 REGISTER_TEST(TU_test_03) {
@@ -246,11 +253,10 @@ REGISTER_TEST(TU_test_24) {
 }
 
 REGISTER_TEST(TU_test_25) {
-    uint32_t x = 0x3f800000u; 
+    uint32_t x = 0x3f800000u; // bit pattern for float 1.0
     float f = std::bit_cast<float>(x);
     assert(f == 1.0f);
 }
-
 
 REGISTER_TEST(TU_test_26) {
     auto parseIntThrow = [](const std::string& s)->int {
@@ -360,4 +366,279 @@ REGISTER_TEST(TU_test_35) {
         threw = std::string(e.what()) == "found";
     }
     assert(threw);
+}
+
+
+
+static std::vector<fs::path> collect_source_files() {
+    std::vector<fs::path> out;
+    const fs::path start = fs::current_path();
+    for (auto const& entry : fs::recursive_directory_iterator(start)) {
+        if (!entry.is_regular_file()) continue;
+        auto p = entry.path();
+        auto s = p.string();
+        
+        if (s.find("/tests/") != std::string::npos || s.find("\\tests\\") != std::string::npos) continue;
+        if (p.extension() == ".cpp" || p.extension() == ".cc" || p.extension() == ".cxx" || p.extension() == ".h" || p.extension() == ".hpp")
+            out.push_back(p);
+    }
+    return out;
+}
+
+static std::vector<std::string> read_lines(const fs::path& p) {
+    std::vector<std::string> lines;
+    std::ifstream ifs(p);
+    if (!ifs) return lines;
+    std::string line;
+    while (std::getline(ifs, line)) lines.push_back(line);
+    return lines;
+}
+
+static std::string trim_copy(const std::string& s) {
+    size_t b = s.find_first_not_of(" \t\r\n");
+    if (b == std::string::npos) return "";
+    size_t e = s.find_last_not_of(" \t\r\n");
+    return s.substr(b, e - b + 1);
+}
+
+static bool is_comment_line(const std::string& s) {
+    auto t = trim_copy(s);
+    return t.rfind("//", 0) == 0 || t.rfind("/*", 0) == 0 || t.rfind("*", 0) == 0;
+}
+
+REGISTER_TEST(TU_test_36_duplicate_code) {
+    auto files = collect_source_files();
+    const int WINDOW = 5;
+    std::unordered_map<std::string, std::vector<std::pair<std::string, int>>> seen; // fingerprint -> list of (file,line)
+    for (auto& f : files) {
+        auto lines = read_lines(f);
+        std::vector<std::string> norm;
+        norm.reserve(lines.size());
+        for (auto& L : lines) {
+            auto t = trim_copy(L);
+            if (t.empty() || is_comment_line(t)) continue;
+            norm.push_back(t);
+        }
+        for (size_t i = 0; i + WINDOW <= norm.size(); ++i) {
+            std::ostringstream oss;
+            for (int j = 0; j < WINDOW; ++j) oss << norm[i + j] << '\n';
+            std::string key = oss.str();
+            seen[key].emplace_back(f.string(), int(i + 1));
+        }
+    }
+    
+    std::vector<std::string> dup_examples;
+    for (auto& kv : seen) {
+        std::set<std::string> fileset;
+        for (auto& loc : kv.second) fileset.insert(loc.first);
+        if (fileset.size() >= 2) {
+            
+            std::ostringstream oss;
+            int added = 0;
+            for (auto& loc : kv.second) {
+                if (added++ >= 6) break;
+                oss << loc.first << ":" << loc.second << "; ";
+            }
+            dup_examples.push_back(oss.str());
+            if (dup_examples.size() >= 5) break;
+        }
+    }
+    if (!dup_examples.empty()) {
+        std::ostringstream msg;
+        msg << "Duplicate code fragments detected (heuristic): examples: ";
+        for (auto& e : dup_examples) msg << "[" << e << "]";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+
+REGISTER_TEST(TU_test_37_magic_numbers) {
+    auto files = collect_source_files();
+    std::regex number_re(R"((?<![\w.])(-?\d+)(?![\w.]))");
+    std::vector<std::string> examples;
+    for (auto& f : files) {
+        auto lines = read_lines(f);
+        for (size_t i = 0; i < lines.size(); ++i) {
+            const auto& L = lines[i];
+            std::string trimmed = trim_copy(L);
+            if (trimmed.empty()) continue;
+            
+            std::string low = trimmed;
+            std::transform(low.begin(), low.end(), low.begin(), [](unsigned char c) { return std::tolower(c); });
+            if (low.find("constexpr") != std::string::npos ||
+                low.find("const ") != std::string::npos ||
+                low.find("#define") != std::string::npos ||
+                low.find("enum ") != std::string::npos) continue;
+            
+            std::smatch m;
+            std::string s = L;
+            auto begin = s.cbegin();
+            while (std::regex_search(begin, s.cend(), m, number_re)) {
+                std::string num = m[1].str();
+                try {
+                    long val = std::stol(num);
+                    
+                    if (val == 0 || val == 1 || val == -1) {
+                        
+                    }
+                    else {
+                        
+                        std::ostringstream ex;
+                        ex << f.string() << ":" << (i + 1) << " -> " << trim_copy(L);
+                        examples.push_back(ex.str());
+                        break;
+                    }
+                }
+                catch (...) {  }
+                begin = m.suffix().first;
+            }
+            if (examples.size() >= 10) break;
+        }
+        if (examples.size() >= 10) break;
+    }
+    if (!examples.empty()) {
+        std::ostringstream msg;
+        msg << "Probable magic number literals found (heuristic). Examples:\n";
+        for (auto& e : examples) msg << "  " << e << "\n";
+        msg << "Recommendation: replace literals with named constants (const/constexpr/enums).";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+
+REGISTER_TEST(TU_test_38_long_functions) {
+    auto files = collect_source_files();
+    const int MAX_LINES = 50;
+    std::vector<std::string> long_funcs;
+    std::regex control_kw(R"(\b(if|for|while|switch|catch|else|return|do)\b)");
+    for (auto& f : files) {
+        auto lines = read_lines(f);
+        for (size_t i = 0; i < lines.size(); ++i) {
+            std::string L = trim_copy(lines[i]);
+            if (L.empty()) continue;
+           
+            if (L.find(')') != std::string::npos && L.back() != ';') {
+                
+                if (std::regex_search(L, control_kw)) continue;
+                
+                size_t braceLine = i;
+                bool foundBrace = false;
+                if (L.find('{') != std::string::npos) foundBrace = true;
+                else {
+                    size_t j = i + 1;
+                    for (; j < lines.size() && j < i + 6; ++j) {
+                        auto next = trim_copy(lines[j]);
+                        if (next.empty()) continue;
+                        if (next.front() == '{') { braceLine = j; foundBrace = true; break; }
+                        break;
+                    }
+                }
+                if (!foundBrace) continue;
+                
+                int level = 0;
+                int countLines = 0;
+                for (size_t k = braceLine; k < lines.size(); ++k) {
+                    auto t = lines[k];
+                    for (char c : t) {
+                        if (c == '{') ++level;
+                        else if (c == '}') --level;
+                    }
+                    ++countLines;
+                    if (level <= 0) break;
+                    if (countLines > MAX_LINES) {
+                        std::ostringstream ex;
+                        ex << f.string() << ":" << (i + 1) << " header=" << L << " length=" << countLines;
+                        long_funcs.push_back(ex.str());
+                        break;
+                    }
+                }
+                if (long_funcs.size() >= 10) break;
+            }
+        }
+        if (long_funcs.size() >= 10) break;
+    }
+    if (!long_funcs.empty()) {
+        std::ostringstream msg;
+        msg << "Functions exceeding " << 50 << " lines detected (heuristic). Examples:\n";
+        for (auto& e : long_funcs) msg << "  " << e << "\n";
+        msg << "Consider refactoring into smaller functions.";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+
+REGISTER_TEST(TU_test_39_many_params) {
+    auto files = collect_source_files();
+    std::vector<std::string> offenders;
+    std::regex func_sig(R"(([^;{}()\n<>]+)\(([^\)]*)\)\s*(const)?\s*(?:\{|;))"); 
+    for (auto& f : files) {
+        auto text = std::string();
+        for (auto& L : read_lines(f)) text += L + "\n";
+        std::smatch m;
+        auto s = text;
+        while (std::regex_search(s, m, func_sig)) {
+            std::string params = m[2].str();
+            
+            if (trim_copy(params).empty()) { s = m.suffix().str(); continue; }
+            
+            int commas = 0;
+            int angle = 0;
+            for (char c : params) {
+                if (c == '<') ++angle;
+                else if (c == '>') if (angle > 0) --angle;
+                else if (c == ',' && angle == 0) ++commas;
+            }
+            int paramCount = commas + 1;
+            if (paramCount > 4) {
+                std::ostringstream ex;
+                ex << f.string() << " -> params=" << paramCount << " signature_preview=\"" << trim_copy(m[0].str()) << "\"";
+                offenders.push_back(ex.str());
+            }
+            s = m.suffix().str();
+            if (offenders.size() >= 20) break;
+        }
+        if (offenders.size() >= 20) break;
+    }
+    if (!offenders.empty()) {
+        std::ostringstream msg;
+        msg << "Functions with too many parameters (>4) detected (heuristic). Examples:\n";
+        for (auto& e : offenders) msg << "  " << e << "\n";
+        msg << "Consider grouping parameters or introducing parameter objects.";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+
+REGISTER_TEST(TU_test_40_casts_and_multi_inherit) {
+    auto files = collect_source_files();
+    std::vector<std::string> dynamic_cast_sites;
+    std::vector<std::string> multi_inherit_sites;
+    std::regex dyn_re(R"(dynamic_cast\s*<)");
+    std::regex class_multi_re(R"(\bclass\s+\w+\s*:\s*[^;{]+,)");
+    for (auto& f : files) {
+        auto lines = read_lines(f);
+        for (size_t i = 0; i < lines.size(); ++i) {
+            auto L = lines[i];
+            if (std::regex_search(L, dyn_re)) {
+                std::ostringstream ex; ex << f.string() << ":" << (i + 1) << " -> " << trim_copy(L);
+                dynamic_cast_sites.push_back(ex.str());
+            }
+            if (std::regex_search(L, class_multi_re)) {
+                std::ostringstream ex; ex << f.string() << ":" << (i + 1) << " -> " << trim_copy(L);
+                multi_inherit_sites.push_back(ex.str());
+            }
+        }
+    }
+    if (!dynamic_cast_sites.empty() || !multi_inherit_sites.empty()) {
+        std::ostringstream msg;
+        if (!dynamic_cast_sites.empty()) {
+            msg << "dynamic_cast usage detected (consider design alternatives / polymorphic interface):\n";
+            for (auto& e : dynamic_cast_sites) msg << "  " << e << "\n";
+        }
+        if (!multi_inherit_sites.empty()) {
+            msg << "Multiple inheritance (implementation) declarations detected (prefer single inheritance for implementation):\n";
+            for (auto& e : multi_inherit_sites) msg << "  " << e << "\n";
+        }
+        throw std::runtime_error(msg.str());
+    }
 }
