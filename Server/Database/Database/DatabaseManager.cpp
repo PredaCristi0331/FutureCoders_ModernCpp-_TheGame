@@ -1,5 +1,6 @@
 ﻿#include "DatabaseManager.h"
 #include "sqlite_orm.h"
+#include <regex>
 
 using namespace sqlite_orm;
 
@@ -91,6 +92,10 @@ void DatabaseManager::init(const std::string& dbPath)
 
 
 bool DatabaseManager::registerUser(const std::string& username, const std::string& password) {
+    static const std::regex usernameRegex("^[a-zA-Z0-9_]{3,16}$");
+    if (!std::regex_match(username, usernameRegex))
+        return false;
+
     auto existing = storage().get_all<User>(where(c(&User::username) == username));
     if (!existing.empty()) return false;
 
