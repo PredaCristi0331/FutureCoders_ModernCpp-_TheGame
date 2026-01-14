@@ -3,7 +3,7 @@
 #include <cstdint>
 
 struct User {
-    int id;                     
+    int id = 0;                     
     std::string username;      
     std::string password;
 

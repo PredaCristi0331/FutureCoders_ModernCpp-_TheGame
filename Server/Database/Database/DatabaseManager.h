@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <cstdint>
 #include "Models.h"
 
 class DatabaseManager {
@@ -16,11 +17,11 @@ public:
     static bool addPlayerToSession(int sessionId, int userId, bool isHost);
     static bool setSessionRunning(int sessionId, const std::string& start_time);
     static bool finishSession(int sessionId,
-        bool won,
-        int cards_left_in_draw,
-        int total_moves,
-        const std::string& end_time,
-        std::int64_t duration_seconds);
+                              bool won,
+                              int cards_left_in_draw,
+                              int total_moves,
+                              const std::string& end_time,
+                              std::int64_t duration_seconds);
 
     static std::optional<int> findBestWaitingSessionForUser(int userId, int tolerance = 1);
 
