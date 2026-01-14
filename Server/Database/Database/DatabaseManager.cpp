@@ -1,6 +1,8 @@
 ﻿#include "DatabaseManager.h"
 #include "sqlite_orm.h"
 #include <regex>
+#include <algorithm>
+#include <numeric>
 
 using namespace sqlite_orm;
 
@@ -310,6 +312,7 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
         profile.username = "(unknown)";
         return profile;
     }
+
     profile.username = uopt->username;
     profile.hours_played_seconds = uopt->hours_played_seconds;
 
@@ -319,42 +322,48 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
 
     profile.games_played = static_cast<int>(stats.size());
 
-    int gamesWon = 0;
-    int gamesLost = 0;
-    long long sumCardsOnLoss = 0;
-    int lossCount = 0;
+    auto isWin = [](const PlayerGameStats& s) {
+        return s.won;
+        };
 
-    for (const auto& s : stats) {
-        if (s.won) {
-            gamesWon++;
+    auto isLoss = [](const PlayerGameStats& s) {
+        return !s.won;
+        };
+
+    int gamesWon = std::count_if(stats.begin(), stats.end(), isWin);
+    int gamesLost = std::count_if(stats.begin(), stats.end(), isLoss);
+
+    long long sumCardsOnLoss = std::accumulate(
+        stats.begin(), stats.end(), 0LL,
+        [](long long acc, const PlayerGameStats& s) {
+            return s.won ? acc : acc + s.final_cards_in_hand;
         }
-        else {
-            gamesLost++;
-            sumCardsOnLoss += s.final_cards_in_hand;
-            lossCount++;
-        }
-    }
+    );
+
+    int lossCount = gamesLost;
 
     profile.games_won = gamesWon;
     profile.games_lost = gamesLost;
 
     profile.avg_cards_on_loss = (lossCount > 0)
-        ? (static_cast<double>(sumCardsOnLoss) / lossCount)
+        ? static_cast<double>(sumCardsOnLoss) / lossCount
         : 0.0;
 
-    double winRate = 0.0;
-    if (profile.games_played > 0) {
-        winRate = static_cast<double>(gamesWon) / profile.games_played;
-    }
+    auto calcWinRate = [](int won, int played) -> double {
+        return (played > 0) ? static_cast<double>(won) / played : 0.0;
+        };
 
-    int score = 1;
-    if (profile.games_played > 0) {
-        if (winRate < 0.2)       score = 1;
-        else if (winRate < 0.4)  score = 2;
-        else if (winRate < 0.6)  score = 3;
-        else if (winRate < 0.8)  score = 4;
-        else                     score = 5;
-    }
+    double winRate = calcWinRate(gamesWon, profile.games_played);
+
+    auto scoreFromWinRate = [](double wr) {
+        if (wr < 0.2) return 1;
+        if (wr < 0.4) return 2;
+        if (wr < 0.6) return 3;
+        if (wr < 0.8) return 4;
+        return 5;
+        };
+
+    int score = scoreFromWinRate(winRate);
 
     if (gamesLost > 0 && profile.avg_cards_on_loss >= 10.0) score -= 1;
     if (gamesLost > 0 && profile.avg_cards_on_loss >= 15.0) score -= 1;
@@ -362,6 +371,7 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
     profile.performance_score = clampScore(score);
     return profile;
 }
+
 
 
 void DatabaseManager::recomputeAndUpdateUserStats(int userId) {
