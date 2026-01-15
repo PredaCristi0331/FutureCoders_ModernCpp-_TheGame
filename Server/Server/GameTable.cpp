@@ -1,9 +1,9 @@
 ﻿module GameTable;
 using namespace game;
-import <iostream>;
+import <iostream>; // Warning: Should verify if we can remove this if no cout is used, but Keeping for now if needed for debug
 import <vector>;
-//import <algorithm>;
-//import <random>;
+import <algorithm>;
+import <random>;
 
 game::GameTable::GameTable():m_nrGamer(0)
 {
@@ -18,42 +18,36 @@ void game::GameTable::SetNrGamer(int nrGamer)
 	m_nrGamer = nrGamer;
 }
 
-int game::GameTable::GetNrGame()
+int game::GameTable::GetNrGame() const
 {
 	return m_nrGamer;
 }
 
-bool game::GameTable::GamerCard(int cardNumber, int nrGamer)
+void game::GameTable::AddGamer(const std::string& name)
 {
-	for (int i = 0; i < m_Gamers[nrGamer].GetCards().size(); i++) {
-		if (m_Gamers[nrGamer].returnCard(i) == cardNumber)
-			return true;
-	}
-	return false;
+	if (m_Gamers.size() >= 5) return;
+	
+    Player gamer(name);
+	m_Gamers.push_back(gamer);
+    m_nrGamer = static_cast<int>(m_Gamers.size());
 }
 
-void game::GameTable::AddGamer()
+int game::GameTable::GetGamerIndexByName(const std::string& name) const
 {
-	if (m_nrGamer < 2 || m_nrGamer>5)
-	{
-		std::cout << "Not valid gamer number. The game finished.";
-		return;
-	}
-	for (int i = 0; i < m_nrGamer; i++) {
-		std::cout << "Name of the "<<i+1<<" gamer:";
-		std::string name;
-		std::cin >> name;
-		Player gamer(name);
-
-		m_Gamers.push_back(gamer);
-	}
-	std::cout << "The gamers are:\n";
-	for (int i = 0; i < m_Gamers.size(); i++)
-		std::cout << m_Gamers[i].GetName() << "\n";
+    for(size_t i=0; i<m_Gamers.size(); ++i) {
+        if(m_Gamers[i].GetName() == name) return static_cast<int>(i);
+    }
+    return -1;
 }
 
 void game::GameTable::AddInitialCards()
 {
+    // Ensure lists are empty before adding
+    m_increasingFirst.clear();
+    m_increasingSecond.clear();
+    m_decreasingFirst.clear();
+    m_decreasingSecond.clear();
+
 	Card cardInitialIncreasing(1);
 	Card cardInitialDecreasing(100);
 	this->m_increasingFirst.push_back(cardInitialIncreasing);
@@ -64,6 +58,7 @@ void game::GameTable::AddInitialCards()
 
 void game::GameTable::MixingDeckCards()
 {
+    m_deckCards.clear();
 	for (int i = 2; i < 100; i++)
 	{
 		Card c(i);
@@ -71,19 +66,9 @@ void game::GameTable::MixingDeckCards()
 	}
 
 	// Fisher-Yates shuffle algorithm
-	//import <random>;
-	//std::random_device rd;
-	//std::mt19937 g(rd());
-	//
-	//for (int i = static_cast<int>(m_deckCards.size()) - 1; i > 0; i--) {
-	//	std::uniform_int_distribution<int> dist(0, i);
-	//	int j = dist(g);
-	//	
-	//	// Swap m_deckCards[i] with m_deckCards[j]
-	//	Card temp = m_deckCards[i];
-	//	m_deckCards[i] = m_deckCards[j];
-	//	m_deckCards[j] = temp;
-	//}
+	std::random_device rd;
+	std::mt19937 g(rd());
+    std::shuffle(m_deckCards.begin(), m_deckCards.end(), g);
 }
 
 void game::GameTable::IssuerCard()
@@ -91,55 +76,49 @@ void game::GameTable::IssuerCard()
 	int nrCardsIssuer = -1;
 	if (m_nrGamer == 2)
 		nrCardsIssuer = 8;
-	if (m_nrGamer == 3)
+	else if (m_nrGamer == 3)
 		nrCardsIssuer = 7;
-	if (m_nrGamer == 4 || m_nrGamer == 5)
+	else if (m_nrGamer >= 4)
 		nrCardsIssuer = 6;
-	int k = 0;
-	while (k < m_nrGamer) {
-		if (m_Gamers[k].GetCards().size() < nrCardsIssuer) {
-			m_Gamers[k].AddCard(m_deckCards.back());
-			m_deckCards.pop_back();
-		}
-		else k++;
-	}
+    
+    // Safety check
+    if (nrCardsIssuer == -1) return;
+
+	// Distribute cards until everyone has enough or deck is empty
+    // Note: The original logic was a bit weird using while(k<m_nrGamer). 
+    // Standard dealing is: Everyone gets 1 card, then everyone gets 2nd card...
+    // But getting full hand at once is also acceptable for this implementation.
+    
+    for(int k=0; k<m_nrGamer; ++k) {
+        while(m_Gamers[k].GetCards().size() < nrCardsIssuer && !m_deckCards.empty()) {
+             m_Gamers[k].AddCard(m_deckCards.back());
+             m_deckCards.pop_back();
+        }
+    }
 }
 
-Card game::GameTable::GetLastCardFromIncreasingFirst()
+Card game::GameTable::GetLastCardFromIncreasingFirst() const
 {
+    if(m_increasingFirst.empty()) return Card(1); // Should not happen if initialized
 	return m_increasingFirst.back();
 }
 
-Card game::GameTable::GetLastCardFromIncreasingSecond()
+Card game::GameTable::GetLastCardFromIncreasingSecond() const
 {
+     if(m_increasingSecond.empty()) return Card(1);
 	return m_increasingSecond.back();
 }
 
-Card game::GameTable::GetLastCardFromDecreasingFirst()
+Card game::GameTable::GetLastCardFromDecreasingFirst() const
 {
+     if(m_decreasingFirst.empty()) return Card(100);
 	return m_decreasingFirst.back();
 }
 
-Card game::GameTable::GetLastCardFromDecreasingSecond()
+Card game::GameTable::GetLastCardFromDecreasingSecond() const
 {
+     if(m_decreasingSecond.empty()) return Card(100);
 	return m_decreasingSecond.back();
-}
-
-void game::GameTable::ShowCardsGamer(int nrGamer)
-{
-	Player j = m_Gamers[nrGamer];
-	std::cout << "My cards!\n";
-	j.ShowCards();
-}
-
-std::vector<Card>& game::GameTable:: GetCardsGamer(int nrGamer)
-{
-	return m_Gamers[nrGamer].GetCards();
-}
-
-const std::vector<Card>& game::GameTable::GetCardsGamer(int nrGamer) const
-{
-	return m_Gamers[nrGamer].GetCards();
 }
 
 void game::GameTable::PushIncreasingFirst(Card card)
@@ -174,16 +153,19 @@ const Player& game::GameTable::GetGamer(int nrGamer) const
 
 void game::GameTable::PushCard(Card card, int nrGamer)
 {
-	m_Gamers[nrGamer].AddCard(card);
+    if(nrGamer >= 0 && nrGamer < m_Gamers.size())
+	    m_Gamers[nrGamer].AddCard(card);
 }
 
 void game::GameTable::RemoveDeckCardsLast()
 {
-	m_deckCards.pop_back();
+    if(!m_deckCards.empty())
+	    m_deckCards.pop_back();
 }
 
 Card game::GameTable::DeckCardsLast()
 {
+    if(m_deckCards.empty()) return Card(0); // Invalid card
 	return m_deckCards.back();
 }
 
@@ -194,27 +176,32 @@ int game::GameTable::SizeDeckCards()
 
 void game::GameTable::RemoveLastIncreasingFirst()
 {
-	m_increasingFirst.pop_back();
+    if(m_increasingFirst.size() > 1) // Keep the base card
+	    m_increasingFirst.pop_back();
 }
 
 void game::GameTable::RemoveLastIncreasingSecond()
 {
-	m_increasingSecond.pop_back();
+    if(m_increasingSecond.size() > 1)
+	    m_increasingSecond.pop_back();
 }
 
 void game::GameTable::RemoveLastDecreasingFirst()
 {
-	m_decreasingFirst.pop_back();
+    if(m_decreasingFirst.size() > 1)
+	    m_decreasingFirst.pop_back();
 }
 
 void game::GameTable::RemoveLastDecreasingSecond()
 {
-	m_decreasingSecond.pop_back();
+    if(m_decreasingSecond.size() > 1)
+	    m_decreasingSecond.pop_back();
 }
 
 void game::GameTable::RemoveCardFromHand(int nrGamer, Card card)
 {
-	m_Gamers[nrGamer].RemoveCard(card);
+    if(nrGamer >= 0 && nrGamer < m_Gamers.size())
+	    m_Gamers[nrGamer].RemoveCard(card);
 }
 
 // Move validation functions
@@ -244,17 +231,10 @@ bool game::GameTable::IsValidMove(Card card, int stackNumber)
 	}
 }
 
-std::vector<int> game::GameTable::GetValidMoves(Card card)
+// Keeping wrapper for back-compat if needed, or redirecting
+bool game::GameTable::IsMoveAllowed(Card card, int stackNumber)
 {
-	std::vector<int> validStacks;
-	
-	for (int i = 1; i <= 4; i++) {
-		if (IsValidMove(card, i)) {
-			validStacks.push_back(i);
-		}
-	}
-	
-	return validStacks;
+    return IsValidMove(card, stackNumber);
 }
 
 bool game::GameTable::IsGameWon()
@@ -266,17 +246,25 @@ bool game::GameTable::IsGameWon()
 	return true;
 }
 
-bool game::GameTable::IsMoveAllowed(Card card, int stackNumber)
+bool game::GameTable::IsGameLost(int currentPlayerIndex)
 {
-	const Card* top = nullptr;
-	switch (stackNumber) {
-	case 1: if (!m_increasingFirst.empty()) top = &m_increasingFirst.back(); break;
-	case 2: if (!m_increasingSecond.empty()) top = &m_increasingSecond.back(); break;
-	case 3: if (!m_decreasingFirst.empty()) top = &m_decreasingFirst.back(); break;
-	case 4: if (!m_decreasingSecond.empty()) top = &m_decreasingSecond.back(); break;
-	}
-	if (!top) return true; // dacă stiva e goală
-	int diff = card.GetCardNumber() - top->GetCardNumber();
-	if (stackNumber <= 2) return diff > 0 || diff == -10; // increasing
-	return diff < 0 || diff == 10; // decreasing
+    // The game is lost if the current player cannot make ANY valid move
+    // AND they haven't met the minimum cards quota (checked at logic level, but here we check possibility)
+    
+    // Actually, "Game Over" logic per rules: 
+    // "cel puțin un jucător nu poate plasa numărul minim de cărți în turul său"
+    // So we need to check if the player possesses ANY card that can be played on ANY stack.
+    
+    if(currentPlayerIndex < 0 || currentPlayerIndex >= m_Gamers.size()) return true; // Error state
+    
+    const auto& hand = m_Gamers[currentPlayerIndex].GetCards();
+    if(hand.empty()) return false; // If hand empty, they likely finished their turn or won
+    
+    for(const auto& card : hand) {
+        for(int stack=1; stack<=4; ++stack) {
+            if(IsValidMove(card, stack)) return false; // Found at least one valid move
+        }
+    }
+    
+    return true; // No valid moves found
 }

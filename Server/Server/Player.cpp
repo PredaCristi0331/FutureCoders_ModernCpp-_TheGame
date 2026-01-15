@@ -16,7 +16,7 @@ int game::Player::GetId() {
 	return m_id;
 }
 
-std::string game::Player::GetName()
+std::string game::Player::GetName() const
 {
 	return m_name;
 }

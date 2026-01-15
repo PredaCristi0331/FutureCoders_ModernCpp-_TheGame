@@ -15,7 +15,7 @@ namespace game {
 		Player(const std::string& name);
 		void SetId(int id);
 		int GetId();
-		std::string GetName();
+		std::string GetName() const;
 		void SetName(std::string name);
 		void SetCards(std::vector<Card>cards);
 		void AddCard(Card cardDrawn);
