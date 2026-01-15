@@ -2,10 +2,11 @@
 #include "RulesWindow.h"
 #include <QFont>
 
-LobbyWindow::LobbyWindow(QWidget* parent) 
+LobbyWindow::LobbyWindow(GameClient* client, QWidget* parent) 
     : QWidget(parent)
+    , gameClient(client)
     , selectedDifficulty("Ușor")
-    , matchmakingTimer(nullptr)
+    , matchmakingTimer(new QTimer(this))
 {
     setupUI();
     setupSettingsUI(); // Init Settings

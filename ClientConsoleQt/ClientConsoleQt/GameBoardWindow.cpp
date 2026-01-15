@@ -5,6 +5,7 @@
 #include "OpponentWidget.h"
 #include <QSplitter>
 #include <QMessageBox>
+#include <QTimer>
 
 GameBoardWindow::GameBoardWindow(GameClient* client, QWidget* parent)
     : QWidget(parent)
@@ -178,6 +179,8 @@ void GameBoardWindow::onPileClicked(PileType type) {
         QMessageBox::information(this, "Acțiune", "Ai încercat să joci o carte!");
     }
 }
+
+void GameBoardWindow::onSendChatClicked() {
     QString msg = chatInput->text().trimmed();
     if (msg.isEmpty()) return;
 

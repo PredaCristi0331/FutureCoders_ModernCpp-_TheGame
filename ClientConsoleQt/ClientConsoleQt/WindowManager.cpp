@@ -32,7 +32,7 @@ void WindowManager::initWindows() {
             this, &WindowManager::showLobbyWindow);
 
     // Creează LobbyWindow
-    lobbyWindow = new LobbyWindow(this);
+    lobbyWindow = new LobbyWindow(gameClient, this);
     addWidget(lobbyWindow);
     connect(lobbyWindow, &LobbyWindow::startGame, 
             this, &WindowManager::showGameBoardWindow);
@@ -44,7 +44,9 @@ void WindowManager::initWindows() {
     profileWindow = new ProfileWindow(this);
     addWidget(profileWindow);
     connect(profileWindow, &ProfileWindow::backToLobby, 
-            [this]() { showLobbyWindow(""); }); // Lambda for simple redirection    gameBoardWindow = new GameBoardWindow(gameClient, this);
+            [this]() { showLobbyWindow(""); }); // Lambda for simple redirection
+    
+    gameBoardWindow = new GameBoardWindow(gameClient, this);
     addWidget(gameBoardWindow);
 }
 

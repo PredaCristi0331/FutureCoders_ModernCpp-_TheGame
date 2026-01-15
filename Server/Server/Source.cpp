@@ -130,12 +130,17 @@ int main()
             });
 
 
-    /* Temporarily disabled - CROW parameter matching issue
+    // Join game endpoint
     CROW_ROUTE(app, "/game/<int>/join").methods(crow::HTTPMethod::POST)
-        ([&](int64_t gameId, const crow::request& req) -> crow::response {
-        return gameManager.JoinGame(static_cast<int>(gameId), req);
+        ([&](const crow::request& req, int gameId) {
+        http::RequestTimer timer("/game/join");
+        http::Logger::LogRequest("POST", "/game/" + std::to_string(gameId) + "/join");
+        
+        auto response = gameManager.JoinGame(gameId, req);
+        http::CorsMiddleware::AddCorsHeaders(response);
+        http::Logger::LogResponse(response.code, "/game/" + std::to_string(gameId) + "/join");
+        return response;
             });
-    */
 
     CROW_ROUTE(app, "/game/<int>")
         ([&](int64_t gameId) -> crow::response {

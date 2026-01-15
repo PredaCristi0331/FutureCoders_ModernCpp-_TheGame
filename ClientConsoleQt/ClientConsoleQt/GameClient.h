@@ -1,5 +1,5 @@
 #include <QObject>
-#include "NetworkClient.h"
+#include "../../TheGame/ClientConsole/ClientConsole/NetworkClient.h"
 #include "GameState.h"
 #include <string>
 #include <vector>

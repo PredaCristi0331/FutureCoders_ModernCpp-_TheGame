@@ -111,17 +111,29 @@
     <QtMoc Include="LoginWindow.h" />
     <QtMoc Include="GameClient.h" />
     <QtMoc Include="WindowManager.h" />
+    <QtMoc Include="ProfileWindow.h" />
+    <QtMoc Include="GameBoardWindow.h" />
+    <QtMoc Include="RulesWindow.h" />
+    <QtMoc Include="PileWidget.h" />
+    <QtMoc Include="CardWidget.h" />
+    <QtMoc Include="OpponentWidget.h" />
     <ClCompile Include="ClientConsoleQt.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="WindowManager.cpp" />
     <ClCompile Include="GameClient.cpp" />
-    <ClCompile Include="..\ClientConsole\ClientConsole\NetworkClient.cpp" />
+    <ClCompile Include="..\..\TheGame\ClientConsole\ClientConsole\NetworkClient.cpp" />
     <ClCompile Include="LoginWindow.cpp" />
     <ClCompile Include="LobbyWindow.cpp" />
+    <ClCompile Include="ProfileWindow.cpp" />
+    <ClCompile Include="GameBoardWindow.cpp" />
+    <ClCompile Include="RulesWindow.cpp" />
+    <ClCompile Include="PileWidget.cpp" />
+    <ClCompile Include="CardWidget.cpp" />
+    <ClCompile Include="OpponentWidget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TEMPLATE_Window.h" />
-    <ClInclude Include="..\ClientConsole\ClientConsole\NetworkClient.h" />
+    <ClInclude Include="..\..\TheGame\ClientConsole\ClientConsole\NetworkClient.h" />
     <ClInclude Include="GameState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

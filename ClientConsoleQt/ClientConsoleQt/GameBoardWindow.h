@@ -41,6 +41,7 @@ private:
     QWidget* opponentsArea{nullptr};
     QWidget* pilesArea{nullptr};
     QWidget* handArea{nullptr};
+    std::vector<CardWidget*> handCards;
     
     // Chat UI (Commit 3)
     QListWidget* chatHistory{nullptr};

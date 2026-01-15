@@ -12,6 +12,8 @@
 #include <QCheckBox>
 #include <QProgressBar>
 
+class GameClient;
+
 /**
  * LobbyWindow - Fereastra de lobby cu selecție dificultate
  * 
@@ -24,7 +26,7 @@ class LobbyWindow : public QWidget {
     Q_OBJECT
 
 public:
-    explicit LobbyWindow(QWidget* parent = nullptr);
+    explicit LobbyWindow(GameClient* client, QWidget* parent = nullptr);
     ~LobbyWindow();
 
     void setUsername(const QString& username);
@@ -46,6 +48,7 @@ private slots:
     void onThemeChanged(int index);
 
 private:
+    GameClient* gameClient;
     QString currentUsername;
     QString selectedDifficulty;
 
@@ -72,6 +75,7 @@ private:
     QLabel* waitingStatusLabel{nullptr};
     QProgressBar* waitingProgress{nullptr};
     QPushButton* cancelWaitBtn{nullptr};
+    QTimer* matchmakingTimer{nullptr};
 
     void setupSettingsUI();
     void setupWaitingUI();
