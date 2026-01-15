@@ -4,4 +4,5 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="Server/Server.vcxproj" Id="0c2f9e7e-59d3-4e51-ac71-0fa344fb6340" />
+  <Project Path="Database/Database/Database.vcxproj" Id="7dcff2e8-a848-4a86-b84b-e0f80b1dc71c" />
 </Solution>

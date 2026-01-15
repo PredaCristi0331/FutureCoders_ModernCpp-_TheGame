@@ -1,12 +1,13 @@
 #include "GameClient.h"
 #include <iostream>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 GameClient::GameClient(const std::string& serverUrl, QObject* parent) 
     : QObject(parent), m_network(serverUrl) {}
 
 bool GameClient::Login(const std::string& username) {
-    // Server expects: { "username": "..." }
-    // Try Register first to ensure user exists
     json regPayload = {{"username", username}};
     m_network.Post("/auth/register", regPayload); 
 
@@ -15,9 +16,10 @@ bool GameClient::Login(const std::string& username) {
     
     if (response.status_code == 200) {
         auto data = json::parse(response.text);
-        // Server returns: { "status": "logged_in", "token": "...", "username": "..." }
-        m_userId = 1; // Mock ID, token handled internally implicitly if needed later
         m_username = username;
+        
+        m_userId = 1; 
+        
         std::cout << "Login successful!" << std::endl;
         return true;
     } else {
@@ -27,27 +29,27 @@ bool GameClient::Login(const std::string& username) {
 }
 
 bool GameClient::JoinGame() {
-    // Logic: Try to Join Game 0. If 404, Create Game.
-    // Server Join: POST /game/<id>/join, Body: { "playerName": ... }
     
     std::string playerName = m_username.empty() ? "Player" : m_username;
     json joinPayload = {{"playerName", playerName}};
     
-    // 1. Try Join Game 0
     auto response = m_network.Post("/game/0/join", joinPayload);
 
     if (response.status_code == 200) {
         std::cout << "Joined Game 0!" << std::endl;
+        auto data = json::parse(response.text);
         m_gameId = 0;
+        m_gameId = 0;
+        m_userId = data["playerIndex"].get<int>();
         m_isInGame = true;
         emit gameJoined(m_gameId);
         return true;
     } 
     else if (response.status_code == 404 || response.status_code == 400 || response.status_code == 500) {
-        // Game doesn't exist or is full? Let's try to Create one.
+    else if (response.status_code == 404 || response.status_code == 400 || response.status_code == 500) {
         std::cout << "Join failed (" << response.status_code << "). Creating new game..." << std::endl;
         
-        json createPayload = {{"maxPlayers", 2}}; // Default to 2 players
+        json createPayload = {{"maxPlayers", 2}};
         auto createResp = m_network.Post("/game/create", createPayload);
         
         if (createResp.status_code == 200) {
@@ -55,14 +57,21 @@ bool GameClient::JoinGame() {
             int newGameId = data["gameId"];
             std::cout << "Created Game " << newGameId << ". Joining..." << std::endl;
             
-            // Re-try Join
+            std::cout << "Created Game " << newGameId << ". Joining..." << std::endl;
+            
             std::string endpoint = "/game/" + std::to_string(newGameId) + "/join";
             auto finalResp = m_network.Post(endpoint, joinPayload);
             
             if (finalResp.status_code == 200) {
+                 auto finalData = json::parse(finalResp.text);
                  m_gameId = newGameId;
+                 m_userId = finalData["playerIndex"].get<int>();
                  m_isInGame = true;
                  emit gameJoined(m_gameId);
+                 
+                 m_isInGame = true;
+                 emit gameJoined(m_gameId);
+                 
                  return true;
             }
         }
@@ -73,19 +82,57 @@ bool GameClient::JoinGame() {
 }
 
 void GameClient::PlayCard(int cardValue, int pileIndex) {
-    // Server doesn't support play_card yet.
-    std::cout << "Server: PlayCard not implemented yet." << std::endl;
+    if (!m_isInGame) return;
+
+    json payload = {
+        {"playerIndex", m_userId},
+        {"cardValue", cardValue},
+        {"pileIndex", pileIndex}
+    };
+    
+    std::string endpoint = "/game/" + std::to_string(m_gameId) + "/play";
+    auto response = m_network.Post(endpoint, payload);
+    
+    if(response.status_code == 200) {
+        std::cout << "Move accepted!" << std::endl;
+    if(response.status_code == 200) {
+        std::cout << "Move accepted!" << std::endl;
+        PollGameState();
+    } else {
+        std::cout << "Move failed: " << response.text << std::endl;
+    }
+}
+
+void GameClient::EndTurn() {
+    if (!m_isInGame) return;
+
+    json payload = {
+        {"playerIndex", m_userId}
+    };
+    
+    std::string endpoint = "/game/" + std::to_string(m_gameId) + "/endturn";
+    auto response = m_network.Post(endpoint, payload);
+    
+    if(response.status_code == 200) {
+        std::cout << "Turn ended!" << std::endl;
+         PollGameState();
+    } else {
+        std::cout << "End turn failed: " << response.text << std::endl;
+    }
 }
 
 void GameClient::DrawCards() {
-    // Server doesn't support draw_cards yet.
-    std::cout << "Server: DrawCards not implemented yet." << std::endl;
+void GameClient::DrawCards() {
+    std::cout << "DrawCards is handled automatically at EndTurn." << std::endl;
+}
 }
 
 void GameClient::SendChat(const std::string& message) {
     if (!m_isInGame) return;
 
-    // Server: POST /chat, Body: { "gameId": ..., "playerName": ..., "message": ... }
+void GameClient::SendChat(const std::string& message) {
+    if (!m_isInGame) return;
+
     json payload = {
         {"gameId", m_gameId},
         {"playerName", m_username},
@@ -101,14 +148,58 @@ GameState GameClient::GetGameState() {
 bool GameClient::PollGameState() {
     if (!m_isInGame) return false;
 
-    // Server: GET /game/<id> -> Info (players, status)
-    std::string endpoint = "/game/" + std::to_string(m_gameId);
+bool GameClient::PollGameState() {
+    if (!m_isInGame) return false;
+
+    std::string endpoint = "/game/" + std::to_string(m_gameId) + "/state?userId=" + std::to_string(m_userId);
     auto response = m_network.Get(endpoint);
     
     if (response.status_code == 200) {
-        // We can parse status and players
-        // For now, minimal support
-        return true;
+        try {
+            auto data = json::parse(response.text);
+            
+            int curIdx = data.value("currentPlayerIndex", -1);
+            m_currentState.isMyTurn = (curIdx == m_userId);
+            
+            m_currentState.piles.clear();
+            auto piles = data["piles"];
+            m_currentState.piles.push_back({true, piles.value("inc1", 1)});
+            m_currentState.piles.push_back({true, piles.value("inc2", 1)});
+            m_currentState.piles.push_back({false, piles.value("dec1", 100)});
+            m_currentState.piles.push_back({false, piles.value("dec2", 100)});
+            
+            m_currentState.piles.push_back({false, piles.value("dec2", 100)});
+            
+            m_currentState.hand.clear();
+            if(data.contains("myHand")) {
+                for(const auto& c : data["myHand"]) {
+                    m_currentState.hand.push_back({c["value"].get<int>()});
+                }
+            }
+            
+            }
+            
+            m_currentState.otherPlayers.clear();
+            if(data.contains("players")) {
+                int idx = 0;
+                for(const auto& p : data["players"]) {
+                    // Only add others
+                    if(idx != m_userId) {
+                        PlayerInfo pi;
+                        pi.id = idx;
+                        pi.name = p.value("name", "Unknown");
+                        pi.cardCount = p.value("cardCount", 0);
+                        m_currentState.otherPlayers.push_back(pi);
+                    }
+                    idx++;
+                }
+            }
+            
+            emit gameStateUpdated(m_currentState);
+            return true;
+        } catch (const std::exception& e) {
+             std::cout << "Error parsing game state: " << e.what() << std::endl;
+        }
     }
     return false;
 }

@@ -1,5 +1,5 @@
 #include <QObject>
-#include "../../TheGame/ClientConsole/ClientConsole/NetworkClient.h"
+#include "NetworkClient.h"
 #include "GameState.h"
 #include <string>
 #include <vector>
@@ -13,6 +13,7 @@ public:
     bool Login(const std::string& username);
     bool JoinGame();
     void PlayCard(int cardValue, int pileIndex);
+    void EndTurn(); // New method
     void DrawCards();
     void SendChat(const std::string& message);
     GameState GetGameState();
