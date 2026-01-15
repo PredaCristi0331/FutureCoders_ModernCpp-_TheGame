@@ -147,6 +147,37 @@ int main()
         return gameManager.GetGameInfo(static_cast<int>(gameId));
             });
 
+    CROW_ROUTE(app, "/game/<int>/play").methods(crow::HTTPMethod::POST)
+        ([&](const crow::request& req, int gameId) {
+        http::Logger::LogRequest("POST", "/game/" + std::to_string(gameId) + "/play");
+        auto response = gameManager.PlayCard(gameId, req);
+        http::CorsMiddleware::AddCorsHeaders(response);
+        return response;
+            });
+            
+    CROW_ROUTE(app, "/game/<int>/endturn").methods(crow::HTTPMethod::POST)
+        ([&](const crow::request& req, int gameId) {
+        http::Logger::LogRequest("POST", "/game/" + std::to_string(gameId) + "/endturn");
+        auto response = gameManager.EndTurn(gameId, req);
+        http::CorsMiddleware::AddCorsHeaders(response);
+        return response;
+            });
+
+    CROW_ROUTE(app, "/game/<int>/state")
+        ([&](const crow::request& req, int gameId) -> crow::response {
+         // Get userId from query param for now, e.g. ?userId=0
+         // In real app, from Token/Auth
+         char* userParam = req.url_params.get("userId");
+         int userId = userParam ? std::stoi(userParam) : -1;
+         
+        return gameManager.GetGameState(static_cast<int>(gameId), userId);
+            });
+
+    CROW_ROUTE(app, "/game/<int>/start").methods(crow::HTTPMethod::POST)
+        ([&](const crow::request& req, int gameId) {
+        return gameManager.StartGame(gameId);
+            });
+
     CROW_ROUTE(app, "/games")
         ([&]() -> crow::response {
         return gameManager.GetAllGames();

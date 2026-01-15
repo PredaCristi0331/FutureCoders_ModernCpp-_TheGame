@@ -1,5 +1,10 @@
 #include "GameSessionManager.h"
 #include "RequestValidator.h"
+#include "../Database/Database/DatabaseManager.h" // For stats updates
+
+import GameTable;
+import Card;
+import Player;
 
 namespace http
 {
@@ -19,10 +24,11 @@ namespace http
         if (body.has("maxPlayers"))
         {
             maxPlayers = body["maxPlayers"].i();
-            if (maxPlayers < 2 || maxPlayers > 8)
+            maxPlayers = body["maxPlayers"].i();
+            if (maxPlayers < 2 || maxPlayers > 5)
             {
                 return http::RequestValidator::CreateErrorResponse(400, "Invalid maxPlayers",
-                    "maxPlayers must be between 2 and 8");
+                    "maxPlayers must be between 2 and 5");
             }
         }
 
@@ -31,6 +37,11 @@ namespace http
         session.maxPlayers = maxPlayers;
         session.currentPlayers = 0;
         session.status = "waiting";
+        session.table = std::make_shared<game::GameTable>(maxPlayers);
+
+        session.table = std::make_shared<game::GameTable>(maxPlayers);
+
+        DatabaseManager::createWaitingSession(std::to_string(std::time(nullptr)));
 
         m_sessions[session.gameId] = session;
 
@@ -60,6 +71,11 @@ namespace http
             return http::RequestValidator::CreateErrorResponse(400, "Game is full",
                 "This game has reached maximum capacity");
         }
+        
+        if (session.status != "waiting") {
+             return http::RequestValidator::CreateErrorResponse(400, "Game already started",
+                "Cannot join a game in progress");
+        }
 
         auto validationResult = http::RequestValidator::ValidateJSON(req);
         if (validationResult)
@@ -69,30 +85,23 @@ namespace http
 
         auto body = crow::json::load(req.body);
         std::string playerName = "Anonymous";
+        auto body = crow::json::load(req.body);
+        std::string playerName = "Anonymous";
+        int userId = -1;
         
         if (body.has("playerName"))
         {
             playerName = body["playerName"].s();
-            auto lengthValidation = http::RequestValidator::ValidateStringLength(playerName, "playerName", 1, 20);
-            if (lengthValidation)
-            {
-                return std::move(lengthValidation.errorResponse);
-            }
         }
-
+        
         session.playerNames.push_back(playerName);
         session.currentPlayers++;
+        
+        session.table->AddGamer(playerName);
 
-        if (session.currentPlayers >= 2 && session.currentPlayers == session.maxPlayers)
-        {
-            session.status = "playing";
-        }
-
-        crow::json::wvalue response;
-        response["gameId"] = gameId;
-        response["playerName"] = playerName;
         response["currentPlayers"] = session.currentPlayers;
         response["status"] = session.status;
+        response["playerIndex"] = session.currentPlayers - 1;
 
         return crow::response(200, response);
     }
@@ -148,14 +157,31 @@ namespace http
 
         return crow::response(200, games);
     }
+    
     crow::response GameSessionManager::StartGame(int gameId)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         auto it = m_sessions.find(gameId);
         if (it == m_sessions.end()) return crow::response(404, "Game not found");
-        it->second.status = "playing";
+        
+        GameSession& session = it->second;
+        if(session.currentPlayers < 2) return crow::response(400, "Not enough players");
+        if(session.status != "waiting") return crow::response(400, "Game already started");
+
+        session.status = "playing";
+        
+        session.status = "playing";
+        
+        session.table->SetNrGamer(session.currentPlayers);
+        session.table->AddInitialCards();
+        session.table->MixingDeckCards();
+        session.table->IssuerCard();
+        
+        session.currentPlayerIndex = 0;
+
         return crow::response(200, "Game started");
     }
+
     crow::response GameSessionManager::EndGame(int gameId)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -163,5 +189,148 @@ namespace http
         if (it == m_sessions.end()) return crow::response(404, "Game not found");
         it->second.status = "finished";
         return crow::response(200, "Game ended");
+    }
+    
+    }
+    
+    crow::json::wvalue CardToJson(const game::Card& c) {
+        crow::json::wvalue j;
+        j["value"] = c.GetCardNumber();
+        return j;
+    }
+
+    crow::response GameSessionManager::GetGameState(int gameId, int userId)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_sessions.find(gameId);
+        if (it == m_sessions.end()) return crow::response(404, "Game not found");
+        
+        const GameSession& session = it->second;
+        if (!session.table) return crow::response(500, "Game table not initialized");
+
+        crow::json::wvalue response;
+        response["status"] = session.status;
+        response["currentPlayerIndex"] = session.currentPlayerIndex;
+        response["currentPlayerName"] = session.playerNames[session.currentPlayerIndex];
+        
+        response["deckCount"] = session.table->SizeDeckCards();
+        
+        int requestPlayerIndex = userId;
+        
+        if (requestPlayerIndex >= 0 && requestPlayerIndex < session.currentPlayers) {
+            const auto& hand = session.table->GetGamer(requestPlayerIndex).GetCards();
+            std::vector<crow::json::wvalue> handJson;
+            for(const auto& c : hand) {
+                handJson.push_back(CardToJson(c));
+            }
+            response["myHand"] = std::move(handJson);
+        }
+        
+        std::vector<crow::json::wvalue> handSizes;
+        for(int i=0; i<session.currentPlayers; ++i) {
+            crow::json::wvalue pinfo;
+            pinfo["name"] = session.playerNames[i];
+            pinfo["cardCount"] = static_cast<int>(session.table->GetGamer(i).GetCards().size());
+            handSizes.push_back(std::move(pinfo));
+        }
+        response["players"] = std::move(handSizes);
+
+        return crow::response(200, response);
+    }
+
+    crow::response GameSessionManager::PlayCard(int gameId, const crow::request& req)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_sessions.find(gameId);
+        if (it == m_sessions.end()) return crow::response(404, "Game not found");
+        
+        GameSession& session = it->second;
+        if(session.status != "playing") return crow::response(400, "Game not playing");
+
+        auto body = crow::json::load(req.body);
+        if (!body) return crow::response(400, "Invalid JSON");
+        
+        int playerIndex = body["playerIndex"].i();
+        int cardValue = body["cardValue"].i();
+        int playerIndex = body["playerIndex"].i();
+        int cardValue = body["cardValue"].i();
+        int pileIndex = body["pileIndex"].i();
+        
+        if (playerIndex != session.currentPlayerIndex) {
+             return crow::response(403, "Not your turn");
+        }
+        
+        game::Card card(cardValue);
+        
+        if(!session.table->GetGamer(playerIndex).HasCard(cardValue)) {
+             return crow::response(400, "You do not have this card");
+        }
+        
+        if(!session.table->IsValidMove(card, pileIndex)) {
+             return crow::response(400, "Invalid move");
+        }
+        
+        session.table->RemoveCardFromHand(playerIndex, card);
+        bool backwardsTrick = false;
+        
+        switch(pileIndex) {
+            case 1: session.table->PushIncreasingFirst(card); break;
+            case 2: session.table->PushIncreasingSecond(card); break;
+            case 3: session.table->PushDecreasingFirst(card); break;
+            case 4: session.table->PushDecreasingSecond(card); break;
+        }
+        
+        if(session.table->IsGameWon()) {
+            session.status = "finished";
+             return crow::response(200, "Game Won!");
+        }
+        
+         return crow::response(200, "Move Accepted");
+    }
+
+    crow::response GameSessionManager::EndTurn(int gameId, const crow::request& req)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_sessions.find(gameId);
+        if (it == m_sessions.end()) return crow::response(404, "Game not found");
+        
+        GameSession& session = it->second;
+        if(session.status != "playing") return crow::response(400, "Game not playing");
+
+        auto body = crow::json::load(req.body);
+        int playerIndex = body["playerIndex"].i();
+        
+        if (playerIndex != session.currentPlayerIndex) {
+             return crow::response(403, "Not your turn");
+        }
+        
+        int targetHandSize = 6;
+        if(session.maxPlayers == 2) targetHandSize = 8;
+        else if(session.maxPlayers == 3) targetHandSize = 7;
+        
+        game::Player& player = session.table->GetGamer(playerIndex);
+        int currentCount = static_cast<int>(player.GetCards().size());
+        int needed = targetHandSize - currentCount;
+        
+        int needed = targetHandSize - currentCount;
+        
+        for(int i=0; i<needed; ++i) {
+            if(session.table->SizeDeckCards() > 0) {
+                game::Card c = session.table->DeckCardsLast();
+                session.table->RemoveDeckCardsLast();
+                session.table->PushCard(c, playerIndex);
+            } else {
+                break; 
+            }
+        }
+        
+        session.currentPlayerIndex = (session.currentPlayerIndex + 1) % session.currentPlayers;
+        
+        if(session.table->IsGameLost(session.currentPlayerIndex)) {
+            session.status = "finished";
+             return crow::response(200, "Turn ended. Next player has checking... GAME OVER (Lost)");
+        }
+        
+        return crow::response(200, "Turn Ended");
     }
 }
