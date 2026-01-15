@@ -17,7 +17,6 @@ bool GameClient::Login(const std::string& username) {
     if (response.status_code == 200) {
         auto data = json::parse(response.text);
         m_username = username;
-        
         m_userId = 1; 
         
         std::cout << "Login successful!" << std::endl;
@@ -29,7 +28,6 @@ bool GameClient::Login(const std::string& username) {
 }
 
 bool GameClient::JoinGame() {
-    
     std::string playerName = m_username.empty() ? "Player" : m_username;
     json joinPayload = {{"playerName", playerName}};
     
@@ -39,13 +37,11 @@ bool GameClient::JoinGame() {
         std::cout << "Joined Game 0!" << std::endl;
         auto data = json::parse(response.text);
         m_gameId = 0;
-        m_gameId = 0;
         m_userId = data["playerIndex"].get<int>();
         m_isInGame = true;
         emit gameJoined(m_gameId);
         return true;
     } 
-    else if (response.status_code == 404 || response.status_code == 400 || response.status_code == 500) {
     else if (response.status_code == 404 || response.status_code == 400 || response.status_code == 500) {
         std::cout << "Join failed (" << response.status_code << "). Creating new game..." << std::endl;
         
@@ -57,8 +53,6 @@ bool GameClient::JoinGame() {
             int newGameId = data["gameId"];
             std::cout << "Created Game " << newGameId << ". Joining..." << std::endl;
             
-            std::cout << "Created Game " << newGameId << ". Joining..." << std::endl;
-            
             std::string endpoint = "/game/" + std::to_string(newGameId) + "/join";
             auto finalResp = m_network.Post(endpoint, joinPayload);
             
@@ -68,10 +62,6 @@ bool GameClient::JoinGame() {
                  m_userId = finalData["playerIndex"].get<int>();
                  m_isInGame = true;
                  emit gameJoined(m_gameId);
-                 
-                 m_isInGame = true;
-                 emit gameJoined(m_gameId);
-                 
                  return true;
             }
         }
@@ -93,8 +83,6 @@ void GameClient::PlayCard(int cardValue, int pileIndex) {
     std::string endpoint = "/game/" + std::to_string(m_gameId) + "/play";
     auto response = m_network.Post(endpoint, payload);
     
-    if(response.status_code == 200) {
-        std::cout << "Move accepted!" << std::endl;
     if(response.status_code == 200) {
         std::cout << "Move accepted!" << std::endl;
         PollGameState();
@@ -122,13 +110,8 @@ void GameClient::EndTurn() {
 }
 
 void GameClient::DrawCards() {
-void GameClient::DrawCards() {
     std::cout << "DrawCards is handled automatically at EndTurn." << std::endl;
 }
-}
-
-void GameClient::SendChat(const std::string& message) {
-    if (!m_isInGame) return;
 
 void GameClient::SendChat(const std::string& message) {
     if (!m_isInGame) return;
@@ -144,9 +127,6 @@ void GameClient::SendChat(const std::string& message) {
 GameState GameClient::GetGameState() {
     return m_currentState;
 }
-
-bool GameClient::PollGameState() {
-    if (!m_isInGame) return false;
 
 bool GameClient::PollGameState() {
     if (!m_isInGame) return false;
@@ -168,8 +148,6 @@ bool GameClient::PollGameState() {
             m_currentState.piles.push_back({false, piles.value("dec1", 100)});
             m_currentState.piles.push_back({false, piles.value("dec2", 100)});
             
-            m_currentState.piles.push_back({false, piles.value("dec2", 100)});
-            
             m_currentState.hand.clear();
             if(data.contains("myHand")) {
                 for(const auto& c : data["myHand"]) {
@@ -177,13 +155,10 @@ bool GameClient::PollGameState() {
                 }
             }
             
-            }
-            
             m_currentState.otherPlayers.clear();
             if(data.contains("players")) {
                 int idx = 0;
                 for(const auto& p : data["players"]) {
-                    // Only add others
                     if(idx != m_userId) {
                         PlayerInfo pi;
                         pi.id = idx;

@@ -37,12 +37,12 @@
   </ImportGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="QtSettings">
     <QtInstall>6.10.1_msvc2022_64</QtInstall>
-    <QtModules>core;gui;widgets</QtModules>
+    <QtModules>core;gui;widgets;network</QtModules>
     <QtBuildConfig>debug</QtBuildConfig>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'" Label="QtSettings">
     <QtInstall>6.10.1_msvc2022_64</QtInstall>
-    <QtModules>core;gui;widgets</QtModules>
+    <QtModules>core;gui;widgets;network</QtModules>
     <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -117,11 +117,12 @@
     <QtMoc Include="PileWidget.h" />
     <QtMoc Include="CardWidget.h" />
     <QtMoc Include="OpponentWidget.h" />
+    <QtMoc Include="NetworkClient.h" />
     <ClCompile Include="ClientConsoleQt.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="WindowManager.cpp" />
     <ClCompile Include="GameClient.cpp" />
-    <ClCompile Include="..\..\TheGame\ClientConsole\ClientConsole\NetworkClient.cpp" />
+    <ClCompile Include="NetworkClient.cpp" />
     <ClCompile Include="LoginWindow.cpp" />
     <ClCompile Include="LobbyWindow.cpp" />
     <ClCompile Include="ProfileWindow.cpp" />
@@ -133,7 +134,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TEMPLATE_Window.h" />
-    <ClInclude Include="..\..\TheGame\ClientConsole\ClientConsole\NetworkClient.h" />
     <ClInclude Include="GameState.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
