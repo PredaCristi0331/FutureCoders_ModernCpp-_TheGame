@@ -1,5 +1,9 @@
-﻿#include "DatabaseManager.h"
-#include "sqlite_orm.h"
+﻿#ifndef _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#endif
+
+#include "DatabaseManager.h"
+#include "db/sqlite_orm/sqlite_orm.h"
 #include <regex>
 #include <algorithm>
 #include <numeric>
@@ -132,7 +136,7 @@ std::optional<User> DatabaseManager::loginUser(const std::string& username, cons
 int DatabaseManager::createWaitingSession(const std::string& created_at) {
     GameSession s{};
     s.created_at = created_at;
-    s.status = GameStatus::Waiting;
+    s.status = static_cast<int>(GameStatus::Waiting);
     s.num_players = 0;
     s.won = false;
     s.cards_left_in_draw = 0;
@@ -148,7 +152,7 @@ bool DatabaseManager::addPlayerToSession(int sessionId, int userId, bool isHost)
     if (sessions.empty()) return false;
 
     GameSession sess = sessions.front();
-    if (sess.status != GameStatus::Waiting) return false;
+    if (sess.status != static_cast<int>(GameStatus::Waiting)) return false;
     if (sess.num_players >= 5) return false;
 
     auto existing = storage().get_all<PlayerGameStats>(
@@ -188,11 +192,11 @@ bool DatabaseManager::setSessionRunning(int sessionId, const std::string& start_
     if (sessions.empty()) return false;
 
     auto s = sessions.front();
-    if (s.status != GameStatus::Waiting) return false;
+    if (s.status != static_cast<int>(GameStatus::Waiting)) return false;
 
     if (s.num_players < 2) return false;
 
-    s.status = GameStatus::Running;
+    s.status = static_cast<int>(GameStatus::Running);
     s.start_time = start_time;
 
     try {
@@ -214,9 +218,9 @@ bool DatabaseManager::finishSession(int sessionId,
     if (sessions.empty()) return false;
 
     auto s = sessions.front();
-    if (s.status == GameStatus::Finished) return false;
-
-    s.status = GameStatus::Finished;
+    if (s.status == static_cast<int>(GameStatus::Finished)) return false;
+    
+    s.status = static_cast<int>(GameStatus::Finished);
     s.won = won;
     s.cards_left_in_draw = cards_left_in_draw;
     s.total_moves = total_moves;
@@ -238,7 +242,7 @@ std::optional<int> DatabaseManager::findBestWaitingSessionForUser(int userId, in
     int score = uopt->performance_score;
 
     auto waiting = storage().get_all<GameSession>(
-        where(c(&GameSession::status) == GameStatus::Waiting &&
+        where(c(&GameSession::status) == static_cast<int>(GameStatus::Waiting) &&
             c(&GameSession::num_players) < 5)
     );
     if (waiting.empty()) return std::nullopt;
@@ -386,7 +390,7 @@ void DatabaseManager::recomputeAndUpdateUserStats(int userId) {
         auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == p.game_session_id));
         if (!sessions.empty()) {
             const auto& s = sessions.front();
-            if (s.status == GameStatus::Finished) {
+            if (s.status == static_cast<int>(GameStatus::Finished)) {
                 totalSec += std::max<std::int64_t>(0, s.duration_seconds);
             }
         }

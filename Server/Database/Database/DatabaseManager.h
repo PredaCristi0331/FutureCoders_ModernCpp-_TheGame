@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-#include "Models.h"
+#include "db/Models.h"
 
 class DatabaseManager {
 public:
