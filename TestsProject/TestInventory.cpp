@@ -18,19 +18,22 @@
 #include <regex>
 #include <stdexcept>
 #include <future>
-#include<sstream>
-
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+#include <unordered_set>
 
 using namespace std::string_literals;
+namespace fs = std::filesystem;
 
-// helper to show move-insertion into deque
+// --- helpers & existing tests ------------------------------------------------
+
 static std::deque<int> make_deque_moved(std::vector<int> v) {
     std::deque<int> d;
     for (auto& x : v) d.push_back(std::move(x));
     return d;
 }
 
-// simple template for container sum (generic)
 template<typename Container>
 auto container_sum(const Container& c) {
     using T = typename Container::value_type;
@@ -39,13 +42,10 @@ auto container_sum(const Container& c) {
     return s;
 }
 
-// variadic template to build vector quickly
 template<typename... Ts>
 auto make_vec(Ts... xs) {
-    return std::vector{ xs... }; // CTAD
+    return std::vector{ xs... };
 }
-
-// 1..25 existing tests (kept unchanged) ------------------------------------
 
 REGISTER_TEST(TI_test_01) {
     std::vector<int> hand;
@@ -222,11 +222,6 @@ REGISTER_TEST(TI_test_25) {
     assert(std::regex_search(s, re));
 }
 
-// ---------------------------------------------------------------------------
-// New tests 26..35 - inventory exception handling and integration scenarios
-// ---------------------------------------------------------------------------
-
-// 26: remove non-existing card -> function throws (simulated behavior)
 REGISTER_TEST(TI_test_26) {
     auto remove_card_or_throw = [](std::vector<int>& hand, int val) {
         auto it = std::find(hand.begin(), hand.end(), val);
@@ -240,14 +235,12 @@ REGISTER_TEST(TI_test_26) {
     assert(caught);
 }
 
-// 27: regex validation for item codes
 REGISTER_TEST(TI_test_27) {
     std::string code = "ITM-001";
     std::regex re(R"(ITM-\d{3})");
     assert(std::regex_match(code, re));
 }
 
-// 28: ensure shared_ptr items are cleaned when container goes out of scope even on exception
 REGISTER_TEST(TI_test_28) {
     bool cleaned = false;
     struct R { bool* p; R(bool* q) :p(q) {} ~R() noexcept { if (p) *p = true; } };
@@ -260,7 +253,6 @@ REGISTER_TEST(TI_test_28) {
     assert(cleaned);
 }
 
-// 29: transactional inventory swap rollback
 REGISTER_TEST(TI_test_29) {
     auto transactional_swap = [](std::vector<int>& a, std::vector<int>& b) {
         auto backup_a = a;
@@ -282,19 +274,16 @@ REGISTER_TEST(TI_test_29) {
     assert(rolled && a == std::vector<int>{1}&& b == std::vector<int>{2});
 }
 
-// 30: reserve may throw bad_alloc - simulate by catching bad_alloc
 REGISTER_TEST(TI_test_30) {
     std::vector<int> v;
     bool caught = false;
     try {
-        // large reserve may or may not throw; simulate by explicit throw to test path
         throw std::bad_alloc();
     }
     catch (const std::bad_alloc&) { caught = true; }
     assert(caught);
 }
 
-// 31: async background inventory compaction (exception in task propagates)
 REGISTER_TEST(TI_test_31) {
     auto fut = std::async(std::launch::async, []() { throw std::runtime_error("compact fail"); return 0; });
     bool catched = false;
@@ -303,17 +292,15 @@ REGISTER_TEST(TI_test_31) {
     assert(catched);
 }
 
-// 32: iterator invalidation detection via throwing helper
 REGISTER_TEST(TI_test_32) {
     std::vector<int> v = { 1,2,3 };
     auto it = v.begin();
     v.push_back(4); // may invalidate
-    bool ok = (it != v.end()); // we don't rely on behavior, just ensure program continues
+    bool ok = (it != v.end());
     (void)ok;
     assert(true);
 }
 
-// 33: find item with ranges + lambda that may throw (caught outside)
 REGISTER_TEST(TI_test_33) {
     std::vector<int> v = { 1,2,3,4 };
     bool thrown = false;
@@ -326,7 +313,6 @@ REGISTER_TEST(TI_test_33) {
     assert(thrown);
 }
 
-// 34: dedup with exception safety (backup restore)
 REGISTER_TEST(TI_test_34) {
     std::vector<int> hand = { 2,2,3,3 };
     auto backup = hand;
@@ -337,7 +323,6 @@ REGISTER_TEST(TI_test_34) {
     assert(!hand.empty());
 }
 
-// 35: make_vec variadic helper correctness and regex on resulting string
 REGISTER_TEST(TI_test_35) {
     auto v = make_vec(11, 22, 33);
     std::ostringstream oss;
@@ -345,4 +330,259 @@ REGISTER_TEST(TI_test_35) {
     std::string s = oss.str();
     std::regex re(R"(\d+,\d+,\d+)");
     assert(std::regex_match(s, re));
+}
+
+
+static std::vector<fs::path> collect_source_files_TI() {
+    std::vector<fs::path> out;
+    const fs::path start = fs::current_path();
+    for (auto const& entry : fs::recursive_directory_iterator(start)) {
+        if (!entry.is_regular_file()) continue;
+        auto p = entry.path();
+        auto s = p.string();
+        if (s.find("/tests/") != std::string::npos || s.find("\\tests\\") != std::string::npos) continue;
+        if (p.extension() == ".cpp" || p.extension() == ".cc" || p.extension() == ".cxx" || p.extension() == ".h" || p.extension() == ".hpp")
+            out.push_back(p);
+    }
+    return out;
+}
+
+static std::vector<std::string> read_lines_TI(const fs::path& p) {
+    std::vector<std::string> lines;
+    std::ifstream ifs(p);
+    if (!ifs) return lines;
+    std::string line;
+    while (std::getline(ifs, line)) lines.push_back(line);
+    return lines;
+}
+
+static std::string trim_copy_TI(const std::string& s) {
+    size_t b = s.find_first_not_of(" \t\r\n");
+    if (b == std::string::npos) return "";
+    size_t e = s.find_last_not_of(" \t\r\n");
+    return s.substr(b, e - b + 1);
+}
+static bool is_comment_line_TI(const std::string& s) {
+    auto t = trim_copy_TI(s);
+    return t.rfind("//", 0) == 0 || t.rfind("/*", 0) == 0 || t.rfind("*", 0) == 0;
+}
+
+REGISTER_TEST(TI_test_36_duplicate_code) {
+    auto files = collect_source_files_TI();
+    const int WINDOW = 5;
+    std::unordered_map<std::string, std::vector<std::pair<std::string, int>>> seen;
+    for (auto& f : files) {
+        auto lines = read_lines_TI(f);
+        std::vector<std::string> norm;
+        norm.reserve(lines.size());
+        for (auto& L : lines) {
+            auto t = trim_copy_TI(L);
+            if (t.empty() || is_comment_line_TI(t)) continue;
+            norm.push_back(t);
+        }
+        for (size_t i = 0; i + WINDOW <= norm.size(); ++i) {
+            std::ostringstream oss;
+            for (int j = 0; j < WINDOW; ++j) oss << norm[i + j] << '\n';
+            std::string key = oss.str();
+            seen[key].emplace_back(f.string(), int(i + 1));
+        }
+    }
+    std::vector<std::string> dup_examples;
+    for (auto& kv : seen) {
+        std::set<std::string> fileset;
+        for (auto& loc : kv.second) fileset.insert(loc.first);
+        if (fileset.size() >= 2) {
+            std::ostringstream oss;
+            int added = 0;
+            for (auto& loc : kv.second) {
+                if (added++ >= 6) break;
+                oss << loc.first << ":" << loc.second << "; ";
+            }
+            dup_examples.push_back(oss.str());
+            if (dup_examples.size() >= 5) break;
+        }
+    }
+    if (!dup_examples.empty()) {
+        std::ostringstream msg;
+        msg << "Duplicate code fragments detected (heuristic): examples: ";
+        for (auto& e : dup_examples) msg << "[" << e << "]";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+REGISTER_TEST(TI_test_37_magic_numbers) {
+    auto files = collect_source_files_TI();
+    std::regex number_re(R"((?<![\w.])(-?\d+)(?![\w.]))");
+    std::vector<std::string> examples;
+    for (auto& f : files) {
+        auto lines = read_lines_TI(f);
+        for (size_t i = 0; i < lines.size(); ++i) {
+            const auto& L = lines[i];
+            std::string trimmed = trim_copy_TI(L);
+            if (trimmed.empty()) continue;
+            std::string low = trimmed;
+            std::transform(low.begin(), low.end(), low.begin(), [](unsigned char c) { return std::tolower(c); });
+            if (low.find("constexpr") != std::string::npos ||
+                low.find("const ") != std::string::npos ||
+                low.find("#define") != std::string::npos ||
+                low.find("enum ") != std::string::npos) continue;
+            std::smatch m;
+            std::string s = L;
+            auto begin = s.cbegin();
+            while (std::regex_search(begin, s.cend(), m, number_re)) {
+                std::string num = m[1].str();
+                try {
+                    long val = std::stol(num);
+                    if (val == 0 || val == 1 || val == -1) {
+                    }
+                    else {
+                        std::ostringstream ex;
+                        ex << f.string() << ":" << (i + 1) << " -> " << trim_copy_TI(L);
+                        examples.push_back(ex.str());
+                        break;
+                    }
+                }
+                catch (...) {}
+                begin = m.suffix().first;
+            }
+            if (examples.size() >= 10) break;
+        }
+        if (examples.size() >= 10) break;
+    }
+    if (!examples.empty()) {
+        std::ostringstream msg;
+        msg << "Probable magic number literals found (heuristic). Examples:\n";
+        for (auto& e : examples) msg << "  " << e << "\n";
+        msg << "Recommendation: replace literals with named constants (const/constexpr/enums).";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+REGISTER_TEST(TI_test_38_long_functions) {
+    auto files = collect_source_files_TI();
+    const int MAX_LINES = 50;
+    std::vector<std::string> long_funcs;
+    std::regex control_kw(R"(\b(if|for|while|switch|catch|else|return|do)\b)");
+    for (auto& f : files) {
+        auto lines = read_lines_TI(f);
+        for (size_t i = 0; i < lines.size(); ++i) {
+            std::string L = trim_copy_TI(lines[i]);
+            if (L.empty()) continue;
+            if (L.find(')') != std::string::npos && L.back() != ';') {
+                if (std::regex_search(L, control_kw)) continue;
+                size_t braceLine = i;
+                bool foundBrace = false;
+                if (L.find('{') != std::string::npos) foundBrace = true;
+                else {
+                    size_t j = i + 1;
+                    for (; j < lines.size() && j < i + 6; ++j) {
+                        auto next = trim_copy_TI(lines[j]);
+                        if (next.empty()) continue;
+                        if (next.front() == '{') { braceLine = j; foundBrace = true; break; }
+                        break;
+                    }
+                }
+                if (!foundBrace) continue;
+                int level = 0;
+                int countLines = 0;
+                for (size_t k = braceLine; k < lines.size(); ++k) {
+                    auto t = lines[k];
+                    for (char c : t) {
+                        if (c == '{') ++level;
+                        else if (c == '}') --level;
+                    }
+                    ++countLines;
+                    if (level <= 0) break;
+                    if (countLines > MAX_LINES) {
+                        std::ostringstream ex;
+                        ex << f.string() << ":" << (i + 1) << " header=" << L << " length=" << countLines;
+                        long_funcs.push_back(ex.str());
+                        break;
+                    }
+                }
+                if (long_funcs.size() >= 10) break;
+            }
+        }
+        if (long_funcs.size() >= 10) break;
+    }
+    if (!long_funcs.empty()) {
+        std::ostringstream msg;
+        msg << "Functions exceeding " << 50 << " lines detected (heuristic). Examples:\n";
+        for (auto& e : long_funcs) msg << "  " << e << "\n";
+        msg << "Consider refactoring into smaller functions.";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+REGISTER_TEST(TI_test_39_many_params) {
+    auto files = collect_source_files_TI();
+    std::vector<std::string> offenders;
+    std::regex func_sig(R"(([^;{}()\n<>]+)\(([^\)]*)\)\s*(const)?\s*(?:\{|;))");
+    for (auto& f : files) {
+        auto text = std::string();
+        for (auto& L : read_lines_TI(f)) text += L + "\n";
+        std::smatch m;
+        auto s = text;
+        while (std::regex_search(s, m, func_sig)) {
+            std::string params = m[2].str();
+            if (trim_copy_TI(params).empty()) { s = m.suffix().str(); continue; }
+            int commas = 0;
+            int angle = 0;
+            for (char c : params) {
+                if (c == '<') ++angle;
+                else if (c == '>') if (angle > 0) --angle;
+                else if (c == ',' && angle == 0) ++commas;
+            }
+            int paramCount = commas + 1;
+            if (paramCount > 4) {
+                std::ostringstream ex;
+                ex << f.string() << " -> params=" << paramCount << " signature_preview=\"" << trim_copy_TI(m[0].str()) << "\"";
+                offenders.push_back(ex.str());
+            }
+            s = m.suffix().str();
+            if (offenders.size() >= 20) break;
+        }
+        if (offenders.size() >= 20) break;
+    }
+    if (!offenders.empty()) {
+        std::ostringstream msg;
+        msg << "Functions with too many parameters (>4) detected (heuristic). Examples:\n";
+        for (auto& e : offenders) msg << "  " << e << "\n";
+        msg << "Consider grouping parameters or introducing parameter objects.";
+        throw std::runtime_error(msg.str());
+    }
+}
+
+REGISTER_TEST(TI_test_40_casts_and_multi_inherit) {
+    auto files = collect_source_files_TI();
+    std::vector<std::string> dynamic_cast_sites;
+    std::vector<std::string> multi_inherit_sites;
+    std::regex dyn_re(R"(dynamic_cast\s*<)");
+    std::regex class_multi_re(R"(\bclass\s+\w+\s*:\s*[^;{]+,)");
+    for (auto& f : files) {
+        auto lines = read_lines_TI(f);
+        for (size_t i = 0; i < lines.size(); ++i) {
+            auto L = lines[i];
+            if (std::regex_search(L, dyn_re)) {
+                std::ostringstream ex; ex << f.string() << ":" << (i + 1) << " -> " << trim_copy_TI(L);
+                dynamic_cast_sites.push_back(ex.str());
+            }
+            if (std::regex_search(L, class_multi_re)) {
+                std::ostringstream ex; ex << f.string() << ":" << (i + 1) << " -> " << trim_copy_TI(L);
+                multi_inherit_sites.push_back(ex.str());
+            }
+        }
+    }
+    if (!dynamic_cast_sites.empty() || !multi_inherit_sites.empty()) {
+        std::ostringstream msg;
+        if (!dynamic_cast_sites.empty()) {
+            msg << "dynamic_cast usage detected (consider design alternatives / polymorphic interface):\n";
+            for (auto& e : dynamic_cast_sites) msg << "  " << e << "\n";
+        }
+        if (!multi_inherit_sites.empty()) {
+            msg << "Multiple inheritance (implementation) declarations detected (prefer single inheritance for implementation):\n";
+            for (auto& e : multi_inherit_sites) msg << "  " << e << "\n";
+        }
+        throw std::runtime_error(msg.str());
+    }
 }
