@@ -1,8 +1,0 @@
-<Solution>
-  <Configurations>
-    <Platform Name="x64" />
-    <Platform Name="x86" />
-  </Configurations>
-  <Project Path="TemplateDLL_TheGame/TemplateDLL_TheGame.vcxproj" Id="d7a754d7-09ba-4367-9f64-6ed4ddbefc0e" />
-  <Project Path="TheGameDLL/TheGameDLL.vcxproj" Id="3c0a08cf-d102-4d3c-b108-ce0a664ef259" />
-</Solution>
