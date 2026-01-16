@@ -12,6 +12,7 @@ import TheGame;
 //}
 
 #include <crow.h>
+#include "../Database/Database/DatabaseManager.h"
 #include "ChatStorage.h"
 #include "ChatHeandler.h"
 #include "GameSessionManager.h"
@@ -27,11 +28,16 @@ import TheGame;
 
 int main()
 {
-    crow::SimpleApp app;
+    try {
+        crow::SimpleApp app;
 
     app.loglevel(crow::LogLevel::Info);
 
     http::Logger::Log(http::Logger::Level::SUCCESS, "Server starting on port 18080...");
+
+    // Initialize Database
+    DatabaseManager::init("game.db");
+    http::Logger::Log(http::Logger::Level::INFO, "Database initialized at game_v3.db");
 
     // Chat
     http::ChatStorage storage;
@@ -211,5 +217,19 @@ int main()
         return response;
             });
 
-    app.port(18080).multithreaded().run();
+        app.port(18080).multithreaded().run();
+    }
+    catch (const std::system_error& e) {
+        std::cerr << "System Error: " << e.what() << " Code: " << e.code() << std::endl;
+        return 1;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return 1;
+    }
+    catch (...) {
+        std::cerr << "Unknown Error occurred." << std::endl;
+        return 1;
+    }
+    return 0;
 }

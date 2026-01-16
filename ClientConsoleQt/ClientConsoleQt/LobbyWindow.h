@@ -37,7 +37,8 @@ signals:
     void logout();
 
 private slots:
-    void onPlayClicked();
+    void onQuickMatchClicked();
+    void onCreateGameClicked();
     void onProfileClicked();
     void onRulesClicked();
     void onLogoutClicked();
@@ -56,7 +57,12 @@ private:
     QLabel* welcomeLabel;
     QLabel* difficultyLabel;
     QComboBox* difficultyComboBox;
-    QPushButton* playButton;
+
+    // Buttons
+    QPushButton* quickMatchButton;
+    QPushButton* createGameButton;
+    QPushButton* joinIdButton; // Optional interaction
+    
     QPushButton* profileButton;
     QPushButton* rulesButton;
     QPushButton* logoutButton;

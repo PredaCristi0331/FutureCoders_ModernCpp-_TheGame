@@ -28,6 +28,7 @@ public:
     void setUsername(const QString& username);
 
 private slots:
+    void updateGameState(const GameState& state);
     void onSendChatClicked();
     void onCardClicked(int value);
     void onPileClicked(PileType type);

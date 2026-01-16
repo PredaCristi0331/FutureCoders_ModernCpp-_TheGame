@@ -11,7 +11,9 @@ public:
     explicit GameClient(const std::string& serverUrl, QObject* parent = nullptr);
 
     bool Login(const std::string& username);
-    bool JoinGame();
+    bool JoinGame(int gameId);
+    bool CreateGame(int maxPlayers);
+    bool JoinAnyGame();
     void PlayCard(int cardValue, int pileIndex);
     void EndTurn(); // New method
     void DrawCards();

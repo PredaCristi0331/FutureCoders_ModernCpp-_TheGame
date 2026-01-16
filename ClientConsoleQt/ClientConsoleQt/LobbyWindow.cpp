@@ -71,10 +71,17 @@ void LobbyWindow::setupUI() {
     QVBoxLayout* buttonLayout = new QVBoxLayout();
     buttonLayout->setSpacing(15);
 
-    playButton = new QPushButton("Caută Joc", this);
-    playButton->setMinimumHeight(50);
-    playButton->setMinimumWidth(200);
-    buttonLayout->addWidget(playButton);
+    // 1. Quick Match
+    quickMatchButton = new QPushButton("Joc Rapid", this);
+    quickMatchButton->setMinimumHeight(45);
+    quickMatchButton->setStyleSheet("background-color: #27ae60; font-weight: bold;"); // Green
+    buttonLayout->addWidget(quickMatchButton);
+
+    // 2. Create Game
+    createGameButton = new QPushButton("Crează Joc", this);
+    createGameButton->setMinimumHeight(45);
+    createGameButton->setStyleSheet("background-color: #2980b9; font-weight: bold;"); // Blue
+    buttonLayout->addWidget(createGameButton);
 
     profileButton = new QPushButton("Profil", this);
     profileButton->setMinimumHeight(45);
@@ -194,7 +201,8 @@ void LobbyWindow::applyStyles() {
 }
 
 void LobbyWindow::connectSignals() {
-    connect(playButton, &QPushButton::clicked, this, &LobbyWindow::onPlayClicked);
+    connect(quickMatchButton, &QPushButton::clicked, this, &LobbyWindow::onQuickMatchClicked);
+    connect(createGameButton, &QPushButton::clicked, this, &LobbyWindow::onCreateGameClicked);
     connect(profileButton, &QPushButton::clicked, this, &LobbyWindow::onProfileClicked);
     connect(rulesButton, &QPushButton::clicked, this, &LobbyWindow::onRulesClicked);
     connect(settingsButton, &QPushButton::clicked, this, &LobbyWindow::toggleSettings);
@@ -210,28 +218,46 @@ void LobbyWindow::onDifficultyChanged(int index) {
     }
 }
 
-void LobbyWindow::onPlayClicked() {
-    if (!currentUsername.isEmpty()) {
-        // UI State Update
-        playButton->setEnabled(false);
-        profileButton->setEnabled(false);
-        logoutButton->setEnabled(false);
-        difficultyComboBox->setEnabled(false);
-        
-        // Visual Feedback
-        playButton->setText("Se caută adversar...");
-        // Orange color for "searching" state
-        playButton->setStyleSheet("background-color: #d35400; color: white; border-radius: 8px; font-weight: bold; font-size: 14px;");
+void LobbyWindow::onQuickMatchClicked() {
+    if (currentUsername.isEmpty()) return;
+    
+    // UI Feedback
+    updateStatus("Se caută joc...", "#f39c12");
+    
+    // Async simulation for UI responsiveness? Or blocking?
+    // GameClient methods are blocking now (simplification).
+    // Use QTimer::singleShot to allow UI update before blocking call.
+    
+    QTimer::singleShot(100, [this](){
+        if(gameClient->JoinAnyGame()) {
+            updateStatus("Joc găsit!", "#2ecc71");
+            emit startGame(currentUsername, selectedDifficulty);
+        } else {
+            updateStatus("Nu s-a găsit joc.", "#c0392b");
+        }
+    });
+}
 
-        // Afișează status de matchmaking
-        // updateStatus("Căutare joc...", "#4ecdc4"); // Old
-        
-        // New Waiting UI
-        showWaitingScreen();
-        
-        // Logic moved to showWaitingScreen()
-        // timer logic...
-    }
+void LobbyWindow::onCreateGameClicked() {
+    if (currentUsername.isEmpty()) return;
+    
+    updateStatus("Se crează joc...", "#f39c12");
+    
+    QTimer::singleShot(100, [this](){
+        // Create game with e.g. 2 players for now locally
+        // Maybe add dialog for max players later
+        int players = 2; // Default
+        if(gameClient->CreateGame(players)) {
+            updateStatus("Joc creat!", "#2ecc71");
+             emit startGame(currentUsername, selectedDifficulty);
+        } else {
+            updateStatus("Eroare la creare.", "#c0392b");
+        }
+    });
+}
+
+void LobbyWindow::onPlayClicked() {
+    // Deprecated
 }
 
 void LobbyWindow::onMatchmakingTimeout() {
@@ -388,7 +414,8 @@ void LobbyWindow::showWaitingScreen() {
 void LobbyWindow::hideWaitingScreen() {
     waitingOverlay->hide();
     matchmakingTimer->stop();
-    playButton->setEnabled(true);
+    quickMatchButton->setEnabled(true);
+    createGameButton->setEnabled(true);
     profileButton->setEnabled(true);
     settingsButton->setEnabled(true); // Re-enable
 }

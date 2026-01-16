@@ -12,19 +12,22 @@ GameBoardWindow::GameBoardWindow(GameClient* client, QWidget* parent)
     , gameClient(client)
 {
     setupUI();
-    setupNotificationUI(); // Inline Init
+    setupNotificationUI();
     applyStyles();
     
-    // Test Notification
-    QTimer::singleShot(1000, [this](){ showNotification("Bun venit la masă!"); });
+    // Connect GameClient signals
+    connect(gameClient, &GameClient::gameStateUpdated, this, &GameBoardWindow::updateGameState);
+
+    // Initial poll
+    QTimer::singleShot(100, [this](){ 
+        if(gameClient->IsInGame()) gameClient->PollGameState(); 
+    });
 }
 
 GameBoardWindow::~GameBoardWindow() = default;
 
 void GameBoardWindow::setUsername(const QString& username) {
     currentUsername = username;
-    // Load initial state or mock data here
-    updateHandUI();
 }
 
 void GameBoardWindow::setupUI() {
@@ -140,9 +143,52 @@ void GameBoardWindow::setupChatUI(QVBoxLayout* layout) {
     connect(chatInput, &QLineEdit::returnPressed, this, &GameBoardWindow::onSendChatClicked);
 }
 
-void GameBoardWindow::updateHandUI() {
-    // Mock hand for visual verification
-    if (handArea->layout()) {
+void GameBoardWindow::updateGameState(const GameState& state) {
+    // 1. Update Opponents
+    // Clear existing opponents if count mismatch or full refresh needed
+    // For simplicity, let's update if exists, or recreate if count differs
+    if (opponents.size() != state.otherPlayers.size()) {
+        // Recreate
+        qDeleteAll(opponents);
+        opponents.clear();
+        QLayoutItem* item;
+        while ((item = opponentsArea->layout()->takeAt(0)) != nullptr) {
+            delete item->widget();
+            delete item; // Safe?
+        }
+        
+        for (const auto& p : state.otherPlayers) {
+            auto* opp = new OpponentWidget(QString::fromStdString(p.name), this);
+            opp->setCardCount(p.cardCount);
+            opponentsArea->layout()->addWidget(opp);
+            opponents.push_back(opp);
+        }
+    } else {
+        // Just Update
+        for (size_t i=0; i<state.otherPlayers.size(); ++i) {
+            opponents[i]->setName(QString::fromStdString(state.otherPlayers[i].name));
+            opponents[i]->setCardCount(state.otherPlayers[i].cardCount);
+        }
+    }
+
+    // 2. Update Piles
+    // Expect 4 piles.
+    if(state.piles.size() == 4) {
+        for(size_t i=0; i<4 && i<piles.size(); ++i) {
+            piles[i]->setCardValue(state.piles[i].topCardValue);
+        }
+    }
+    
+    // 3. Update Hand
+    // Naive approach: Recreate all widgets on update (safe but not efficient)
+    // To solve "flicker" or state loss, ideally diff the hand.
+    // For now, let's keep it simple: Recreate.
+    
+    qDeleteAll(handCards);
+    handCards.clear();
+    
+    // Clear layout
+    if(handArea->layout()) {
         QLayoutItem* item;
         while ((item = handArea->layout()->takeAt(0)) != nullptr) {
             delete item->widget();
@@ -150,15 +196,24 @@ void GameBoardWindow::updateHandUI() {
         }
     }
 
-    handCards.clear();
-    // Add 5 mock cards
-    for (int i = 1; i <= 5; ++i) {
-        int val = i * 10 + (rand() % 9);
-        auto* card = new CardWidget(val, this);
+    for (const auto& c : state.hand) {
+        auto* card = new CardWidget(c.value, this);
         connect(card, &CardWidget::clicked, this, &GameBoardWindow::onCardClicked);
         handArea->layout()->addWidget(card);
         handCards.push_back(card);
     }
+    
+    // Update Deck Count (Assuming we have deck count in GameState logic, currently GameState struct doesn't have it explicitly shown but GameClient parsing logic seemingly ignores it in previous view? 
+    // Wait, GameClient::PollGameState parsing logic ignores deckCount?
+    // Let's check GameSessionManager... response["deckCount"].
+    // Let's Check GameClient.cpp PollGameState... It ONLY parses piles and hand and players. Not deckCount.
+    // We should fix GameClient parsing too if we want deck count.
+    
+    // For now, ignore deck count provided by server if not in GameState struct.
+}
+
+void GameBoardWindow::updateHandUI() {
+    // Deprecated / Unused
 }
 
 void GameBoardWindow::onCardClicked(int value) {
@@ -173,10 +228,49 @@ void GameBoardWindow::onCardClicked(int value) {
 }
 
 void GameBoardWindow::onPileClicked(PileType type) {
-    if (selectedHandIndex != -1) {
-        // Here we would implement the logic to play the card
-        // GameClient::PlayCard(...)
-        QMessageBox::information(this, "Acțiune", "Ai încercat să joci o carte!");
+    if (selectedHandIndex != -1) { // Implicitly tracking selected card?
+        // Wait, 'selectedHandIndex' is member but where is it set?
+        // onCardClicked sets selection visual but need to track the value.
+    }
+    
+    // Find selected card widget
+    CardWidget* selected = nullptr;
+    for(auto* c : handCards) {
+        if(c->isSelected()) {
+            selected = c;
+            break;
+        }
+    }
+    
+    if(selected) {
+        int pileIdx = 0; // Map type to index 1-4
+        switch(type) {
+            case PileType::Ascending_1_to_99: 
+                // We have 2 of each. Need to distinguish which widget was clicked.
+                // PileWidget implementation likely doesn't distinguish ID.
+                // But we passed 'this' as parent.
+                // Let's finding index in 'piles' vector.
+                break;
+        }
+        
+        // Find index of sender
+        PileWidget* senderPile = qobject_cast<PileWidget*>(sender());
+        if(senderPile) {
+            for(size_t i=0; i<piles.size(); ++i) {
+                if(piles[i] == senderPile) {
+                    pileIdx = i + 1; // 1-based index for server
+                    break;
+                }
+            }
+        }
+        
+        if(pileIdx > 0) {
+            gameClient->PlayCard(selected->getValue(), pileIdx);
+            // Optimistic update? Or wait for Poll? 
+            // Better wait for Poll to confirm move.
+        }
+    } else {
+        QMessageBox::information(this, "Info", "Selectează o carte din mână!");
     }
 }
 

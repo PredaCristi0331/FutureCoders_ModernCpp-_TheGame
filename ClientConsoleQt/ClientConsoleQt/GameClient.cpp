@@ -27,48 +27,50 @@ bool GameClient::Login(const std::string& username) {
     }
 }
 
-bool GameClient::JoinGame() {
+bool GameClient::JoinGame(int gameId) {
     std::string playerName = m_username.empty() ? "Player" : m_username;
     json joinPayload = {{"playerName", playerName}};
     
-    auto response = m_network.Post("/game/0/join", joinPayload);
+    std::string endpoint = "/game/" + std::to_string(gameId) + "/join";
+    auto response = m_network.Post(endpoint, joinPayload);
 
     if (response.status_code == 200) {
-        std::cout << "Joined Game 0!" << std::endl;
         auto data = json::parse(response.text);
-        m_gameId = 0;
+        m_gameId = gameId; // Use the requested ID
         m_userId = data["playerIndex"].get<int>();
         m_isInGame = true;
         emit gameJoined(m_gameId);
+        std::cout << "Joined Game " << m_gameId << " successfully." << std::endl;
         return true;
     } 
-    else if (response.status_code == 404 || response.status_code == 400 || response.status_code == 500) {
-        std::cout << "Join failed (" << response.status_code << "). Creating new game..." << std::endl;
-        
-        json createPayload = {{"maxPlayers", 2}};
-        auto createResp = m_network.Post("/game/create", createPayload);
-        
-        if (createResp.status_code == 200) {
-            auto data = json::parse(createResp.text);
-            int newGameId = data["gameId"];
-            std::cout << "Created Game " << newGameId << ". Joining..." << std::endl;
-            
-            std::string endpoint = "/game/" + std::to_string(newGameId) + "/join";
-            auto finalResp = m_network.Post(endpoint, joinPayload);
-            
-            if (finalResp.status_code == 200) {
-                 auto finalData = json::parse(finalResp.text);
-                 m_gameId = newGameId;
-                 m_userId = finalData["playerIndex"].get<int>();
-                 m_isInGame = true;
-                 emit gameJoined(m_gameId);
-                 return true;
-            }
-        }
-    }
     
-    std::cout << "Failed to find or create a game." << std::endl;
+    std::cout << "Failed to join Game " << gameId << ": " << response.text << std::endl;
     return false;
+}
+
+bool GameClient::CreateGame(int maxPlayers) {
+    json createPayload = {{"maxPlayers", maxPlayers}};
+    auto createResp = m_network.Post("/game/create", createPayload);
+    
+    if (createResp.status_code == 200) {
+        auto data = json::parse(createResp.text);
+        int newGameId = data["gameId"];
+        std::cout << "Created Game " << newGameId << std::endl;
+        
+        // Auto-join the created game
+        return JoinGame(newGameId);
+    }
+    std::cout << "Failed to create game: " << createResp.text << std::endl;
+    return false;
+}
+
+bool GameClient::JoinAnyGame() {
+    // Try to find an existing game (e.g., game 0, 1, 2...)
+    // For now, let's try Game 0. If 404, we create one.
+    if(JoinGame(0)) return true;
+    
+    // If failed, create new
+    return CreateGame(4);
 }
 
 void GameClient::PlayCard(int cardValue, int pileIndex) {

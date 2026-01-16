@@ -24,7 +24,6 @@ namespace http
         if (body.has("maxPlayers"))
         {
             maxPlayers = body["maxPlayers"].i();
-            maxPlayers = body["maxPlayers"].i();
             if (maxPlayers < 2 || maxPlayers > 5)
             {
                 return http::RequestValidator::CreateErrorResponse(400, "Invalid maxPlayers",
@@ -37,8 +36,6 @@ namespace http
         session.maxPlayers = maxPlayers;
         session.currentPlayers = 0;
         session.status = "waiting";
-        session.table = std::make_shared<game::GameTable>(maxPlayers);
-
         session.table = std::make_shared<game::GameTable>(maxPlayers);
 
         DatabaseManager::createWaitingSession(std::to_string(std::time(nullptr)));
@@ -85,9 +82,6 @@ namespace http
 
         auto body = crow::json::load(req.body);
         std::string playerName = "Anonymous";
-        auto body = crow::json::load(req.body);
-        std::string playerName = "Anonymous";
-        int userId = -1;
         
         if (body.has("playerName"))
         {
@@ -99,6 +93,9 @@ namespace http
         
         session.table->AddGamer(playerName);
 
+        crow::json::wvalue response;
+        response["gameId"] = gameId;
+        response["playerName"] = playerName;
         response["currentPlayers"] = session.currentPlayers;
         response["status"] = session.status;
         response["playerIndex"] = session.currentPlayers - 1;
@@ -170,8 +167,6 @@ namespace http
 
         session.status = "playing";
         
-        session.status = "playing";
-        
         session.table->SetNrGamer(session.currentPlayers);
         session.table->AddInitialCards();
         session.table->MixingDeckCards();
@@ -189,8 +184,6 @@ namespace http
         if (it == m_sessions.end()) return crow::response(404, "Game not found");
         it->second.status = "finished";
         return crow::response(200, "Game ended");
-    }
-    
     }
     
     crow::json::wvalue CardToJson(const game::Card& c) {
@@ -252,8 +245,6 @@ namespace http
         
         int playerIndex = body["playerIndex"].i();
         int cardValue = body["cardValue"].i();
-        int playerIndex = body["playerIndex"].i();
-        int cardValue = body["cardValue"].i();
         int pileIndex = body["pileIndex"].i();
         
         if (playerIndex != session.currentPlayerIndex) {
@@ -271,7 +262,6 @@ namespace http
         }
         
         session.table->RemoveCardFromHand(playerIndex, card);
-        bool backwardsTrick = false;
         
         switch(pileIndex) {
             case 1: session.table->PushIncreasingFirst(card); break;
@@ -310,8 +300,6 @@ namespace http
         
         game::Player& player = session.table->GetGamer(playerIndex);
         int currentCount = static_cast<int>(player.GetCards().size());
-        int needed = targetHandSize - currentCount;
-        
         int needed = targetHandSize - currentCount;
         
         for(int i=0; i<needed; ++i) {
