@@ -54,12 +54,24 @@
     <ClCompile Include="ChatHeandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AuthHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameSessionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChatStorage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ChatHeandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AuthHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GameSessionManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
