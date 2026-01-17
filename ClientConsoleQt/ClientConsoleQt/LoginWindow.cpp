@@ -48,10 +48,15 @@ void LoginWindow::setupUI() {
 
 
     usernameInput = new QLineEdit(this);
-    usernameInput->setPlaceholderText("Introdu numele de utilizator");
+    usernameInput->setPlaceholderText("Nume de utilizator");
     usernameInput->setMinimumHeight(40);
     mainLayout->addWidget(usernameInput);
 
+    passwordInput = new QLineEdit(this);
+    passwordInput->setPlaceholderText("Parola");
+    passwordInput->setEchoMode(QLineEdit::Password);
+    passwordInput->setMinimumHeight(40);
+    mainLayout->addWidget(passwordInput);
 
     QHBoxLayout* buttonLayout = new QHBoxLayout();
     buttonLayout->setSpacing(15);
@@ -82,6 +87,7 @@ void LoginWindow::setupUI() {
     connect(loginButton, &QPushButton::clicked, this, &LoginWindow::onLoginClicked);
     connect(registerButton, &QPushButton::clicked, this, &LoginWindow::onRegisterClicked);
     connect(usernameInput, &QLineEdit::returnPressed, this, &LoginWindow::onLoginClicked);
+    connect(passwordInput, &QLineEdit::returnPressed, this, &LoginWindow::onLoginClicked);
 }
 
 void LoginWindow::applyStyles() {
@@ -150,35 +156,6 @@ bool LoginWindow::validateUsername(const QString& username) {
         return false;
     }
     
-    if (trimmed.length() > 20) {
-        messageLabel->setText("Numele de utilizator trebuie să aibă maxim 20 de caractere!");
-        messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
-        messageLabel->show();
-        return false;
-    }
-    
-    return true;
-}
-
-bool LoginWindow::mockLogin(const QString& username) {
-    QString trimmed = username.trimmed();
-    
-    if (mockUsers.contains(trimmed)) {
-        return true;
-    }
-    
-    return false;
-}
-
-bool LoginWindow::mockRegister(const QString& username) {
-    QString trimmed = username.trimmed();
-    
-    if (mockUsers.contains(trimmed)) {
-        return false; // User deja există
-    }
-    
-
-    mockUsers.insert(trimmed);
     return true;
 }
 
@@ -186,9 +163,14 @@ void LoginWindow::onLoginClicked() {
     messageLabel->hide();
     
     QString username = usernameInput->text();
+    QString password = passwordInput->text();
     
-    if (!validateUsername(username)) {
-        return;
+    if (!validateUsername(username)) return;
+    if (password.isEmpty()) {
+         messageLabel->setText("Introduceți parola!");
+         messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
+         messageLabel->show();
+         return;
     }
     
     loginButton->setEnabled(false);
@@ -198,8 +180,8 @@ void LoginWindow::onLoginClicked() {
     messageLabel->show();
     
 
-    QTimer::singleShot(100, [this, username]() {
-        if (gameClient && gameClient->Login(username.toStdString())) {
+    QTimer::singleShot(100, [this, username, password]() {
+        if (gameClient && gameClient->Login(username.toStdString(), password.toStdString())) {
             messageLabel->setText("Login reușit! Redirecționare...");
             messageLabel->setStyleSheet("color: #51cf66; font-size: 12px;");
             messageLabel->show();
@@ -208,7 +190,7 @@ void LoginWindow::onLoginClicked() {
                 emit loginSuccessful(username);
             });
         } else {
-            messageLabel->setText("Eroare la conectare! Verificați serverul.");
+            messageLabel->setText("Eroare la conectare! Verificați credențialele.");
             messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
             messageLabel->show();
             loginButton->setEnabled(true);
@@ -221,9 +203,14 @@ void LoginWindow::onRegisterClicked() {
     messageLabel->hide();
     
     QString username = usernameInput->text();
+    QString password = passwordInput->text();
     
-    if (!validateUsername(username)) {
-        return;
+    if (!validateUsername(username)) return;
+    if (password.length() < 3) {
+         messageLabel->setText("Parola trebuie să aibă minim 3 caractere!");
+         messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
+         messageLabel->show();
+         return;
     }
     
 
@@ -233,18 +220,17 @@ void LoginWindow::onRegisterClicked() {
     messageLabel->setStyleSheet("color: #4ecdc4; font-size: 12px;");
     messageLabel->show();
     
-    QTimer::singleShot(500, [this, username]() {
-        if (mockRegister(username)) {
-            messageLabel->setText("Înregistrare reușită! Redirecționare...");
+    QTimer::singleShot(500, [this, username, password]() {
+        // Use real GameClient Register
+        if (gameClient && gameClient->Register(username.toStdString(), password.toStdString())) {
+            messageLabel->setText("Înregistrare reușită! Acum vă puteți autentifica.");
             messageLabel->setStyleSheet("color: #51cf66; font-size: 12px;");
             messageLabel->show();
             
-
-            QTimer::singleShot(1000, [this, username]() {
-                emit loginSuccessful(username);
-            });
+            loginButton->setEnabled(true);
+            registerButton->setEnabled(true);
         } else {
-            messageLabel->setText("Username-ul există deja! Încercați să vă logați.");
+            messageLabel->setText("Eroare la înregistrare! (Posibil user existent)");
             messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
             messageLabel->show();
             loginButton->setEnabled(true);

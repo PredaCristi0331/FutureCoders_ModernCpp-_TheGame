@@ -46,4 +46,6 @@ private:
     // Design
     void setupUI();
     void applyStyles();
+    
+    QLineEdit* passwordInput;
 };

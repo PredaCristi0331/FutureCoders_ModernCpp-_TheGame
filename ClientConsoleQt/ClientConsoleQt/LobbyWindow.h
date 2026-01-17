@@ -37,7 +37,7 @@ signals:
     void logout();
 
 private slots:
-    void onQuickMatchClicked();
+    void onJoinGameClicked();
     void onCreateGameClicked();
     void onProfileClicked();
     void onRulesClicked();
@@ -57,6 +57,9 @@ private:
     QLabel* welcomeLabel;
     QLabel* difficultyLabel;
     QComboBox* difficultyComboBox;
+    
+    QLabel* numPlayersLabel;
+    QComboBox* numPlayersComboBox;
 
     // Buttons
     QPushButton* quickMatchButton;
@@ -79,7 +82,8 @@ private:
     // Waiting UI (Inline Commit 2)
     QWidget* waitingOverlay{nullptr};
     QLabel* waitingStatusLabel{nullptr};
-    QProgressBar* waitingProgress{nullptr};
+    QLabel* gameIdDisplayLabel{nullptr}; // New
+    QLabel* playerCountLabel{nullptr};   // New
     QPushButton* cancelWaitBtn{nullptr};
     QTimer* matchmakingTimer{nullptr};
 

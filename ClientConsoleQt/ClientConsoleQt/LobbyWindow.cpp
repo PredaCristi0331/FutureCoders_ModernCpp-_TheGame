@@ -2,6 +2,7 @@
 #include "RulesWindow.h"
 #include "GameClient.h"
 #include <QFont>
+#include <QInputDialog>
 
 LobbyWindow::LobbyWindow(GameClient* client, QWidget* parent) 
     : QWidget(parent)
@@ -68,12 +69,32 @@ void LobbyWindow::setupUI() {
 
     mainLayout->addLayout(difficultyLayout);
 
+    // Selector Nr Jucatori
+    QVBoxLayout* playersLayout = new QVBoxLayout();
+    playersLayout->setSpacing(10);
+    
+    numPlayersLabel = new QLabel("Număr de jucători:", this);
+    numPlayersLabel->setAlignment(Qt::AlignCenter);
+    numPlayersLabel->setStyleSheet("color: #eaeaea; font-size: 16px; font-weight: bold;");
+    playersLayout->addWidget(numPlayersLabel);
+    
+    numPlayersComboBox = new QComboBox(this);
+    numPlayersComboBox->addItem("2 Jucători");
+    numPlayersComboBox->addItem("3 Jucători");
+    numPlayersComboBox->addItem("4 Jucători"); // If 4 is maxSupported, or add 5 if rules allow
+    numPlayersComboBox->addItem("5 Jucători");
+    numPlayersComboBox->setMinimumHeight(45);
+    numPlayersComboBox->setCurrentIndex(0); // Default 2
+    playersLayout->addWidget(numPlayersComboBox);
+    
+    mainLayout->addLayout(playersLayout);
+
     // Butoane
     QVBoxLayout* buttonLayout = new QVBoxLayout();
     buttonLayout->setSpacing(15);
 
-    // 1. Quick Match
-    quickMatchButton = new QPushButton("Joc Rapid", this);
+    // 1. Join Game
+    quickMatchButton = new QPushButton("Join Game", this);
     quickMatchButton->setMinimumHeight(45);
     quickMatchButton->setStyleSheet("background-color: #27ae60; font-weight: bold;"); // Green
     buttonLayout->addWidget(quickMatchButton);
@@ -202,7 +223,7 @@ void LobbyWindow::applyStyles() {
 }
 
 void LobbyWindow::connectSignals() {
-    connect(quickMatchButton, &QPushButton::clicked, this, &LobbyWindow::onQuickMatchClicked);
+    connect(quickMatchButton, &QPushButton::clicked, this, &LobbyWindow::onJoinGameClicked);
     connect(createGameButton, &QPushButton::clicked, this, &LobbyWindow::onCreateGameClicked);
     connect(profileButton, &QPushButton::clicked, this, &LobbyWindow::onProfileClicked);
     connect(rulesButton, &QPushButton::clicked, this, &LobbyWindow::onRulesClicked);
@@ -219,22 +240,22 @@ void LobbyWindow::onDifficultyChanged(int index) {
     }
 }
 
-void LobbyWindow::onQuickMatchClicked() {
+void LobbyWindow::onJoinGameClicked() {
     if (currentUsername.isEmpty()) return;
     
-    // UI Feedback
-    updateStatus("Se caută joc...", "#f39c12");
+    bool ok;
+    int gameId = QInputDialog::getInt(this, "Join Game", 
+                                      "Introduceți ID-ul jocului:", 1, 1, 10000, 1, &ok);
+    if (!ok) return;
+
+    updateStatus(QString("Conectare la jocul %1...").arg(gameId), "#f39c12");
     
-    // Async simulation for UI responsiveness? Or blocking?
-    // GameClient methods are blocking now (simplification).
-    // Use QTimer::singleShot to allow UI update before blocking call.
-    
-    QTimer::singleShot(100, [this](){
-        if(gameClient->JoinAnyGame()) {
-            updateStatus("Joc găsit!", "#2ecc71");
-            emit startGame(currentUsername, selectedDifficulty);
+    QTimer::singleShot(100, [this, gameId](){
+        if(gameClient->JoinGame(gameId)) {
+             updateStatus("Conectat! Așteptare jucători...", "#2ecc71");
+             showWaitingScreen();
         } else {
-            updateStatus("Nu s-a găsit joc.", "#c0392b");
+            updateStatus("Eroare: Jocul nu există sau este plin.", "#c0392b");
         }
     });
 }
@@ -245,12 +266,13 @@ void LobbyWindow::onCreateGameClicked() {
     updateStatus("Se crează joc...", "#f39c12");
     
     QTimer::singleShot(100, [this](){
-        // Create game with e.g. 2 players for now locally
-        // Maybe add dialog for max players later
-        int players = 2; // Default
+        // Get selected player count: index 0 -> 2 players, 1 -> 3 players...
+        int players = numPlayersComboBox->currentIndex() + 2; 
+        
         if(gameClient->CreateGame(players)) {
-            updateStatus("Joc creat!", "#2ecc71");
-             emit startGame(currentUsername, selectedDifficulty);
+            int newGameId = gameClient->GetGameId();
+            updateStatus(QString("Joc creat (ID: %1)! Așteptare jucători...").arg(newGameId), "#2ecc71");
+            showWaitingScreen();
         } else {
             updateStatus("Eroare la creare.", "#c0392b");
         }
@@ -362,28 +384,26 @@ void LobbyWindow::setupWaitingUI() {
     auto* layout = new QVBoxLayout(waitingOverlay);
     layout->setAlignment(Qt::AlignCenter);
     
-    waitingStatusLabel = new QLabel("Se caută jucători...", waitingOverlay);
+    waitingStatusLabel = new QLabel("Așteptare jucători...", waitingOverlay);
     waitingStatusLabel->setAlignment(Qt::AlignCenter);
-    waitingStatusLabel->setStyleSheet("font-size: 24px; color: #4ecdc4;");
+    waitingStatusLabel->setStyleSheet("font-size: 24px; color: #4ecdc4; margin-bottom: 20px;");
     
-    waitingProgress = new QProgressBar(waitingOverlay);
-    waitingProgress->setRange(0, 30);
-    waitingProgress->setValue(0);
-    waitingProgress->setFixedWidth(300);
-    waitingProgress->setStyleSheet(
-        "QProgressBar { border: 2px solid #533483; border-radius: 5px; text-align: center; }"
-        "QProgressBar::chunk { background-color: #533483; }"
-    );
+    gameIdDisplayLabel = new QLabel("Game ID: -", waitingOverlay);
+    gameIdDisplayLabel->setAlignment(Qt::AlignCenter);
+    gameIdDisplayLabel->setStyleSheet("font-size: 32px; font-weight: bold; color: #f1c40f; margin-bottom: 10px;");
+    
+    playerCountLabel = new QLabel("Jucători: -/-", waitingOverlay);
+    playerCountLabel->setAlignment(Qt::AlignCenter);
+    playerCountLabel->setStyleSheet("font-size: 18px; color: #ecf0f1;");
     
     cancelWaitBtn = new QPushButton("Anulează", waitingOverlay);
     cancelWaitBtn->setFixedWidth(150);
-    cancelWaitBtn->setStyleSheet("background-color: #e74c3c;");
+    cancelWaitBtn->setStyleSheet("background-color: #e74c3c; margin-top: 30px;");
     connect(cancelWaitBtn, &QPushButton::clicked, this, &LobbyWindow::hideWaitingScreen);
     
     layout->addWidget(waitingStatusLabel);
-    layout->addSpacing(20);
-    layout->addWidget(waitingProgress);
-    layout->addSpacing(30);
+    layout->addWidget(gameIdDisplayLabel);
+    layout->addWidget(playerCountLabel);
     layout->addWidget(cancelWaitBtn);
 }
 
@@ -392,22 +412,29 @@ void LobbyWindow::showWaitingScreen() {
     waitingOverlay->show();
     waitingOverlay->raise();
     
-    // Start progress
-    waitingProgress->setValue(0);
-    // Reuse existing timer but connect to progress update
+    // Set static info
+    gameIdDisplayLabel->setText(QString("Game ID: %1").arg(gameClient->GetGameId()));
+    
     disconnect(matchmakingTimer, nullptr, nullptr, nullptr);
     connect(matchmakingTimer, &QTimer::timeout, [this]() {
-        int val = waitingProgress->value();
-        if (val >= 30) {
-            onMatchmakingTimeout();
-        } else {
-            waitingProgress->setValue(val + 1);
-            if (val % 5 == 0) {
-                waitingStatusLabel->setText(QString("Jucători găsiți: %1/4").arg(1 + val/10));
+        // Poll Server
+        if (gameClient->PollGameState()) {
+            GameState state = gameClient->GetGameState();
+            
+            playerCountLabel->setText(QString("Jucători: %1 / %2")
+                                      .arg(state.currentPlayers)
+                                      .arg(state.maxPlayers));
+
+            if (state.status == "playing") {
+                 onMatchmakingTimeout(); // Reuse start logic
+                 return;
             }
         }
     });
-    matchmakingTimer->start(100); // Fast for demo (should be 1000 for seconds)
+    matchmakingTimer->start(1000); // Poll every second
+    
+    // Initial poll
+    gameClient->PollGameState();
 }
 
 void LobbyWindow::hideWaitingScreen() {
