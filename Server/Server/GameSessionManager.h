@@ -25,6 +25,7 @@ namespace http
         // Game Logic State
         std::shared_ptr<game::GameTable> table;
         int currentPlayerIndex = 0; // 0 to maxPlayers-1
+        int cardsPlayedThisTurn = 0; // Track cards played in current turn
     };
 
     class GameSessionManager

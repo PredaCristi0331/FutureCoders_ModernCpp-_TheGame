@@ -1,9 +1,11 @@
+#pragma once
 #include <QObject>
 #include "NetworkClient.h"
 #include "GameState.h"
 #include <string>
 #include <vector>
 #include <iostream>
+#include <optional>
 
 class GameClient : public QObject {
     Q_OBJECT
@@ -22,6 +24,25 @@ public:
     GameState GetGameState();
     bool PollGameState(); // Returns true if state changed
 
+    struct ChatMessage {
+        int id;
+        int playerId;
+        int gameId;
+        std::string text;
+        std::string timestamp;
+    };
+    void PollChat();
+
+    struct UserProfile {
+        std::string username;
+        int games_played;
+        int games_won;
+        int games_lost;
+        int performance_score;
+        double hours_played;
+    };
+    std::optional<UserProfile> GetUserProfile(int userId);
+
     bool IsInGame() const { return m_isInGame; }
     int GetUserId() const { return m_userId; }
     int GetGameId() const { return m_gameId; }
@@ -31,6 +52,7 @@ signals:
     void loginFailed(const QString& reason);
     void gameJoined(int gameId);
     void gameStateUpdated(const GameState& state);
+    void chatUpdated(const std::vector<ChatMessage>& messages);
 
 private:
     NetworkClient m_network;

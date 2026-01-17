@@ -184,6 +184,7 @@ namespace http
         session.table->IssuerCard();
         
         session.currentPlayerIndex = 0;
+        session.cardsPlayedThisTurn = 0;
 
         return crow::response(200, "Game started");
     }
@@ -298,31 +299,56 @@ namespace http
             case 4: session.table->PushDecreasingSecond(card); break;
         }
         
+        // Increment cards played counter
+        session.cardsPlayedThisTurn++;
+
+        // Check validation for winning
         if(session.table->IsGameWon()) {
             session.status = "finished";
              return crow::response(200, "Game Won!");
         }
         
-        // --- Auto-End Turn Logic (User Request) ---
-        // 1. Refill Hand
-        int targetHandSize = 6;
-        if(session.maxPlayers == 2) targetHandSize = 8;
-        else if(session.maxPlayers == 3) targetHandSize = 7;
+        // --- NO Auto-End Turn or Auto-Draw here anymore ---
+        // Player must explicitly call EndTurn or continue playing.
+        // Unless they have 0 cards? 
+        // Request says: "players draw card ONLY if they have no cards in hand"
+        // So if hand becomes empty after this move, we should Refill immediately?
+        // "jucatorii trag carte doar daca nu mai au carti in mana" -> "players draw card only if they have no cards in hand"
+        // This implies IF hand is empty, they draw. 
+        // Does this happen immediately or at end of turn?
+        // Usually "The Game" rules say you play until you want to stop.
+        // But if you HAVE NO CARDS, you must draw to continue or finish?
+        // Let's implement: If hand empty, REFILL IMMEDIATELY so they can continue or end.
         
-        game::Player& player = session.table->GetGamer(playerIndex);
-        while(player.GetCards().size() < targetHandSize && session.table->SizeDeckCards() > 0) {
-             game::Card c = session.table->DeckCardsLast();
-             session.table->RemoveDeckCardsLast();
-             session.table->PushCard(c, playerIndex);
+        if (session.table->GetGamer(playerIndex).GetCards().empty()) {
+             int targetHandSize = 6;
+            if(session.maxPlayers == 2) targetHandSize = 8;
+            else if(session.maxPlayers == 3) targetHandSize = 7;
+            
+            while(session.table->GetGamer(playerIndex).GetCards().size() < targetHandSize && session.table->SizeDeckCards() > 0) {
+                 game::Card c = session.table->DeckCardsLast();
+                 session.table->RemoveDeckCardsLast();
+                 session.table->PushCard(c, playerIndex);
+            }
         }
 
-        // 2. Next Turn
-        session.currentPlayerIndex = (session.currentPlayerIndex + 1) % session.currentPlayers;
-
-        // 3. Check Loss for Next Player
-        if(session.table->IsGameLost(session.currentPlayerIndex)) {
-            session.status = "finished";
-             return crow::response(200, "Move Accepted. Next player blocked... GAME OVER (Lost)");
+        // We do NOT check for loss here because player might have just drawn cards or might have more cards.
+        
+        // --- Auto-End Turn Logic (User Request: "After 2 moves turn MUST change") ---
+        int minCards = (session.table->SizeDeckCards() > 0) ? 2 : 1;
+        
+        if (session.cardsPlayedThisTurn >= minCards) {
+             // Rotate Turn
+             session.cardsPlayedThisTurn = 0;
+             session.currentPlayerIndex = (session.currentPlayerIndex + 1) % session.currentPlayers;
+             
+             // Check if NEXT player has lost (blocked)
+             if(session.table->IsGameLost(session.currentPlayerIndex)) {
+                session.status = "finished";
+                 return crow::response(200, "Turn Ended. Next player blocked... GAME OVER (Lost)");
+             }
+             
+             return crow::response(200, "Move Accepted. Turn Ended (Limit Reached).");
         }
         
          return crow::response(200, "Move Accepted");
@@ -344,29 +370,26 @@ namespace http
              return crow::response(403, "Not your turn");
         }
         
-        int targetHandSize = 6;
-        if(session.maxPlayers == 2) targetHandSize = 8;
-        else if(session.maxPlayers == 3) targetHandSize = 7;
-        
-        game::Player& player = session.table->GetGamer(playerIndex);
-        int currentCount = static_cast<int>(player.GetCards().size());
-        int needed = targetHandSize - currentCount;
-        
-        for(int i=0; i<needed; ++i) {
-            if(session.table->SizeDeckCards() > 0) {
-                game::Card c = session.table->DeckCardsLast();
-                session.table->RemoveDeckCardsLast();
-                session.table->PushCard(c, playerIndex);
-            } else {
-                break; 
-            }
+        // Validate Minimum Cards Played
+        int minCards = (session.table->SizeDeckCards() > 0) ? 2 : 1;
+        if (session.cardsPlayedThisTurn < minCards) {
+            // But wait, if they physically CANNOT play?
+            // "The Game" rules: If you cannot play min cards, you lose.
+            // So if they try to End Turn without playing enough, is it a Loss or just "Play more"?
+            // Usually "Play more". If they can't, it's a loss.
+            // Let's return error "Must play at least X cards".
+            // If they truly can't, they will be stuck and eventually leave or we handle "Give Up".
+            return crow::response(400, "Must play at least " + std::to_string(minCards) + " cards.");
         }
-        
+
+        // End Turn Logic
+        session.cardsPlayedThisTurn = 0;
         session.currentPlayerIndex = (session.currentPlayerIndex + 1) % session.currentPlayers;
         
+        // Check if next player lost
         if(session.table->IsGameLost(session.currentPlayerIndex)) {
             session.status = "finished";
-             return crow::response(200, "Turn ended. Next player has checking... GAME OVER (Lost)");
+             return crow::response(200, "Turn ended. Next player blocked... GAME OVER (Lost)");
         }
         
         return crow::response(200, "Turn Ended");

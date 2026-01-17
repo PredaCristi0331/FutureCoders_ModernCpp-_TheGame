@@ -41,7 +41,7 @@ void WindowManager::initWindows() {
     connect(lobbyWindow, &LobbyWindow::logout,
             this, &WindowManager::showLoginWindow);
 
-    profileWindow = new ProfileWindow(this);
+    profileWindow = new ProfileWindow(gameClient, this);
     addWidget(profileWindow);
     connect(profileWindow, &ProfileWindow::backToLobby, 
             [this]() { showLobbyWindow(""); }); // Lambda for simple redirection

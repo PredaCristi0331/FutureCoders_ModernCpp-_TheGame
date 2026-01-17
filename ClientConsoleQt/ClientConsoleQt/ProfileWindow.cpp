@@ -1,10 +1,12 @@
 #include "ProfileWindow.h"
+#include "GameClient.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QDate>
 
-ProfileWindow::ProfileWindow(QWidget* parent) 
+ProfileWindow::ProfileWindow(GameClient* client, QWidget* parent) 
     : QWidget(parent)
+    , m_client(client)
 {
     setupUI();
     applyStyles();
@@ -18,23 +20,39 @@ void ProfileWindow::setUsername(const QString& username) {
     if (usernameLabel) {
         usernameLabel->setText(QString("Jucător: %1").arg(username));
     }
-    // Mock stats generation based on username hash or random for now
     if (statsLabel) {
-        // Mock data matching requirements
-        int hoursPlayed = 12;
-        int score = 4; // 1-5 scale
-        
+        refreshStats();
+    }
+}
+
+void ProfileWindow::refreshStats() {
+    if (!m_client) return;
+
+    // Fetch user profile from server
+    // Need userId first. GameClient has m_userId after Login.
+    int userId = m_client->GetUserId();
+    auto profile = m_client->GetUserProfile(userId);
+
+    if (profile) {
+        // Calculate stars
         QString stars = "";
-        for(int i=0; i<5; ++i) stars += (i < score ? "★" : "☆");
+        for(int i=0; i<5; ++i) stars += (i < profile->performance_score ? "★" : "☆");
         
         statsLabel->setText(QString(
-            "Nivel: 5\n"
             "Ore Jucate: %1\n"
             "Scor Performanță: %2 (%3)\n"
-            "Jocuri Câștigate: 12\n"
-            "Data Înregistrării: %4"
-        ).arg(hoursPlayed).arg(score).arg(stars)
-         .arg(QDate::currentDate().addDays(-30).toString("dd.MM.yyyy")));
+            "Jocuri Jucate: %4\n"
+            "Jocuri Câștigate: %5\n"
+            "Jocuri Pierdute: %6"
+        ).arg(QString::number(profile->hours_played, 'f', 1))
+         .arg(profile->performance_score)
+         .arg(stars)
+         .arg(profile->games_played)
+         .arg(profile->games_won)
+         .arg(profile->games_lost)
+        );
+    } else {
+        statsLabel->setText("Nu s-au putut încărca datele...");
     }
 }
 

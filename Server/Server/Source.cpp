@@ -166,6 +166,28 @@ int main()
         return response;
             });
 
+    // Profile Endpoint
+    CROW_ROUTE(app, "/user/<int>/profile")
+        ([&](int userId) {
+            // 1. Force update stats
+            DatabaseManager::recomputeAndUpdateUserStats(userId);
+            
+            // 2. Get Profile
+            auto profile = DatabaseManager::getUserProfile(userId);
+            
+            crow::json::wvalue json;
+            json["username"] = profile.username;
+            json["games_played"] = profile.games_played;
+            json["games_won"] = profile.games_won;
+            json["games_lost"] = profile.games_lost;
+            json["performance_score"] = profile.performance_score;
+            json["hours_played"] = profile.hours_played_seconds / 3600.0; // Send as hours
+            
+            crow::response response(200, json);
+            http::CorsMiddleware::AddCorsHeaders(response);
+            return response;
+        });
+
     CROW_ROUTE(app, "/game/<int>/state")
         ([&](const crow::request& req, int gameId) -> crow::response {
          // Get userId from query param for now, e.g. ?userId=0

@@ -156,6 +156,35 @@ void GameClient::SendChat(const std::string& message) {
     m_network.Post("/chat", payload);
 }
 
+void GameClient::PollChat() {
+    if (!m_isInGame) return;
+
+    std::string endpoint = "/chat/" + std::to_string(m_gameId);
+    auto response = m_network.Get(endpoint);
+
+    if (response.status_code == 200) {
+        try {
+            auto data = json::parse(response.text);
+            std::vector<ChatMessage> messages;
+            
+            if (data.is_array()) {
+                for (const auto& item : data) {
+                    ChatMessage msg;
+                    msg.id = item.value("id", 0);
+                    msg.playerId = item.value("playerId", 0);
+                    msg.gameId = item.value("gameId", 0);
+                    msg.text = item.value("text", "");
+                    msg.timestamp = item.value("timestamp", "");
+                    messages.push_back(msg);
+                }
+            }
+            emit chatUpdated(messages);
+        } catch (...) {
+            std::cout << "Error parsing chat" << std::endl;
+        }
+    }
+}
+
 GameState GameClient::GetGameState() {
     return m_currentState;
 }
@@ -165,38 +194,39 @@ bool GameClient::PollGameState() {
 
     std::string endpoint = "/game/" + std::to_string(m_gameId) + "/state?userId=" + std::to_string(m_playerIndex);
     auto response = m_network.Get(endpoint);
-    
+
     if (response.status_code == 200) {
         try {
             auto data = json::parse(response.text);
-            
+
             m_currentState.status = data.value("status", "unknown");
             m_currentState.currentPlayers = data.value("currentPlayers", 0);
             m_currentState.maxPlayers = data.value("maxPlayers", 0);
+            m_currentState.deckSize = data.value("deckCount", 98); // Parse deckCount to deckSize
 
             int curIdx = data.value("currentPlayerIndex", -1);
             m_currentState.isMyTurn = (curIdx == m_playerIndex);
             m_currentState.currentPlayerName = data.value("currentPlayerName", "Unknown");
-            
+
             m_currentState.piles.clear();
             auto piles = data["piles"];
-            m_currentState.piles.push_back({true, piles.value("inc1", 1)});
-            m_currentState.piles.push_back({true, piles.value("inc2", 1)});
-            m_currentState.piles.push_back({false, piles.value("dec1", 100)});
-            m_currentState.piles.push_back({false, piles.value("dec2", 100)});
-            
+            m_currentState.piles.push_back({ true, piles.value("inc1", 1) });
+            m_currentState.piles.push_back({ true, piles.value("inc2", 1) });
+            m_currentState.piles.push_back({ false, piles.value("dec1", 100) });
+            m_currentState.piles.push_back({ false, piles.value("dec2", 100) });
+
             m_currentState.hand.clear();
-            if(data.contains("myHand")) {
-                for(const auto& c : data["myHand"]) {
-                    m_currentState.hand.push_back({c["value"].get<int>()});
+            if (data.contains("myHand")) {
+                for (const auto& c : data["myHand"]) {
+                    m_currentState.hand.push_back({ c["value"].get<int>() });
                 }
             }
-            
+
             m_currentState.otherPlayers.clear();
-            if(data.contains("players")) {
+            if (data.contains("players")) {
                 int idx = 0;
-                for(const auto& p : data["players"]) {
-                    if(idx != m_playerIndex) {
+                for (const auto& p : data["players"]) {
+                    if (idx != m_playerIndex) {
                         PlayerInfo pi;
                         pi.id = idx;
                         pi.name = p.value("name", "Unknown");
@@ -206,12 +236,37 @@ bool GameClient::PollGameState() {
                     idx++;
                 }
             }
-            
+
             emit gameStateUpdated(m_currentState);
             return true;
-        } catch (const std::exception& e) {
-             std::cout << "Error parsing game state: " << e.what() << std::endl;
+        }
+        catch (const std::exception& e) {
+            std::cout << "Error parsing game state: " << e.what() << std::endl;
+        }
+        return false;
+    }
+}
+
+std::optional<GameClient::UserProfile> GameClient::GetUserProfile(int userId) {
+    if (userId < 0) return std::nullopt;
+
+    std::string endpoint = "/user/" + std::to_string(userId) + "/profile";
+    auto response = m_network.Get(endpoint);
+
+    if (response.status_code == 200) {
+        try {
+            auto data = json::parse(response.text);
+            UserProfile p;
+            p.username = data.value("username", "Unknown");
+            p.games_played = data.value("games_played", 0);
+            p.games_won = data.value("games_won", 0);
+            p.games_lost = data.value("games_lost", 0);
+            p.performance_score = data.value("performance_score", 1);
+            p.hours_played = data.value("hours_played", 0.0);
+            return p;
+        } catch (...) {
+            std::cout << "Error parsing profile" << std::endl;
         }
     }
-    return false;
+    return std::nullopt;
 }

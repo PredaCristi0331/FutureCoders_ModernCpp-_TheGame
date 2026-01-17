@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "GameState.h"
-class GameClient;
+#include "GameClient.h" // Need full definition for ChatMessage struct
 class CardWidget;
 class PileWidget;
 #include "PileWidget.h"
@@ -33,11 +33,14 @@ private slots:
     void onSendChatClicked();
     void onCardClicked(int value);
     void onPileClicked(PileType type);
+    void onChatUpdated(const std::vector<GameClient::ChatMessage>& messages); // New Slot
 
 private:
     GameClient* gameClient;
     QString currentUsername;
     int selectedHandIndex{-1};
+    int selectedCardValue{-1}; 
+    int lastMessageId = 0; // Track chat history
 
     // UI Areas
     QWidget* opponentsArea{nullptr};

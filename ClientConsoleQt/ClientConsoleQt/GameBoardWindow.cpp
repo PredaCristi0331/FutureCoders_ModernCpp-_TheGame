@@ -17,10 +17,14 @@ GameBoardWindow::GameBoardWindow(GameClient* client, QWidget* parent)
     
     // Connect GameClient signals
     connect(gameClient, &GameClient::gameStateUpdated, this, &GameBoardWindow::updateGameState);
+    connect(gameClient, &GameClient::chatUpdated, this, &GameBoardWindow::onChatUpdated); // new connection
 
     // Initial poll
     QTimer::singleShot(100, [this](){ 
-        if(gameClient->IsInGame()) gameClient->PollGameState(); 
+        if(gameClient->IsInGame()) {
+            gameClient->PollGameState(); 
+            gameClient->PollChat(); // poll chat too
+        }
     });
 }
 
@@ -118,6 +122,15 @@ void GameBoardWindow::setupUI() {
 
     mainLayout->addLayout(gameLayout);
     mainLayout->addWidget(rightPanel);
+    
+    QTimer* gameTimer = new QTimer(this);
+    connect(gameTimer, &QTimer::timeout, [this]() {
+        if(gameClient && gameClient->IsInGame()) {
+             gameClient->PollGameState();
+             gameClient->PollChat();
+        }
+    });
+    gameTimer->start(1000); // 1 sec poll
 }
 
 void GameBoardWindow::setupChatUI(QVBoxLayout* layout) {
@@ -179,6 +192,11 @@ void GameBoardWindow::updateGameState(const GameState& state) {
         }
     }
     
+    // Update Deck Count
+    if(cardsRemainingLabel) {
+        cardsRemainingLabel->setText(QString::number(state.deckSize));
+    }
+    
     // 3. Update Hand
     // Naive approach: Recreate all widgets on update (safe but not efficient)
     // To solve "flicker" or state loss, ideally diff the hand.
@@ -199,6 +217,12 @@ void GameBoardWindow::updateGameState(const GameState& state) {
     for (const auto& c : state.hand) {
         auto* card = new CardWidget(c.value, this);
         connect(card, &CardWidget::clicked, this, &GameBoardWindow::onCardClicked);
+        
+        // Restore selection
+        if(c.value == selectedCardValue) {
+            card->setSelected(true);
+        }
+        
         handArea->layout()->addWidget(card);
         handCards.push_back(card);
     }
@@ -226,12 +250,11 @@ void GameBoardWindow::updateHandUI() {
 }
 
 void GameBoardWindow::onCardClicked(int value) {
-    // Deselect all
+    selectedCardValue = value; // Update persistent selection
+    
+    // Deselect all others, select this one
     for (auto* card : handCards) {
-        card->setSelected(false);
-        if (card->getValue() == value) {
-            card->setSelected(true);
-        }
+        card->setSelected(card->getValue() == value);
     }
     // Logic to play card to follow...
 }
@@ -287,13 +310,33 @@ void GameBoardWindow::onSendChatClicked() {
     QString msg = chatInput->text().trimmed();
     if (msg.isEmpty()) return;
 
-    // Add to local UI immediately (optimistic UI)
-    chatHistory->addItem(QString("[%1]: %2").arg(currentUsername, msg));
+    // Add to local UI immediately (optimistic UI) removed preference for polling
+    // chatHistory->addItem(QString("[%1]: %2").arg(currentUsername, msg));
     chatInput->clear();
     
     if (gameClient) {
         gameClient->SendChat(msg.toStdString());
     }
+}
+
+void GameBoardWindow::onChatUpdated(const std::vector<GameClient::ChatMessage>& messages) {
+     for (const auto& msg : messages) {
+         if (msg.id > lastMessageId) {
+             // Find username if possible. 
+             // We only have IDs. Should map ID to Name from GameState?
+             // For now, let's just show ID or Name if we can match it.
+             // Or format: [User X]: ...
+             
+             QString senderName = QString("User %1").arg(msg.playerId);
+             if (msg.playerId == gameClient->GetUserId()) senderName = currentUsername; 
+             // Ideally map from GameState::otherPlayers
+             
+             chatHistory->addItem(QString("[%1]: %2").arg(senderName, QString::fromStdString(msg.text)));
+             lastMessageId = msg.id;
+         }
+     }
+     if(chatHistory->count() > 0)
+        chatHistory->scrollToBottom();
 }
 
 void GameBoardWindow::applyStyles() {

@@ -5,14 +5,17 @@
 #include <QLabel>
 #include <QPushButton>
 
+class GameClient; // Forward declaration
+
 class ProfileWindow : public QWidget {
     Q_OBJECT
 
 public:
-    explicit ProfileWindow(QWidget* parent = nullptr);
+    explicit ProfileWindow(GameClient* client, QWidget* parent = nullptr);
     ~ProfileWindow() override;
 
     void setUsername(const QString& username);
+    void refreshStats(); // New method
 
 signals:
     void backToLobby();
@@ -21,6 +24,7 @@ private slots:
     void onBackClicked();
 
 private:
+    GameClient* m_client;
     QString currentUsername;
     
     // UI Elements
