@@ -22,9 +22,6 @@ namespace http
 
     crow::response AuthHandler::Register(const crow::request& req)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-
-        // Validate JSON body
         auto body = crow::json::load(req.body);
         if (!body)
         {
@@ -34,27 +31,17 @@ namespace http
             return crow::response(400, error);
         }
 
-        // Validate username field exists
-        if (!body.has("username"))
+        if (!body.has("username") || !body.has("password"))
         {
             crow::json::wvalue error;
             error["error"] = "Missing field";
-            error["message"] = "Username field is required";
+            error["message"] = "Username and password fields are required";
             return crow::response(400, error);
         }
 
         std::string username = body["username"].s();
+        std::string password = body["password"].s();
 
-        // Validate username not empty
-        if (username.empty())
-        {
-            crow::json::wvalue error;
-            error["error"] = "Invalid username";
-            error["message"] = "Username cannot be empty";
-            return crow::response(400, error);
-        }
-
-        // Validate username length
         if (username.length() < 3)
         {
             crow::json::wvalue error;
@@ -63,26 +50,26 @@ namespace http
             return crow::response(400, error);
         }
 
-        // Check if user already exists
-        if (m_users.find(username) != m_users.end())
+        bool success = DatabaseManager::registerUser(username, password);
+        if (!success)
         {
-            crow::json::wvalue error;
-            error["error"] = "User exists";
-            error["message"] = "A user with this username already exists";
-            return crow::response(409, error);
+             crow::json::wvalue error;
+             error["error"] = "Registration failed";
+             error["message"] = "User already exists or username invalid.";
+             return crow::response(409, error);
         }
 
-        // Create new user
-        User user;
-        user.username = username;
-        user.sessionToken = GenerateToken(username);
-
-        m_users[username] = user;
-        m_tokens[user.sessionToken] = username;
+        
+        std::string token = GenerateToken(username);
+        
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_tokens[token] = username;
+        }
 
         crow::json::wvalue response;
         response["username"] = username;
-        response["token"] = user.sessionToken;
+        response["token"] = token;
         response["status"] = "registered";
         response["message"] = "User registered successfully";
 
@@ -91,61 +78,33 @@ namespace http
 
     crow::response AuthHandler::Login(const crow::request& req)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-
-        // Validate JSON body
         auto body = crow::json::load(req.body);
-        if (!body)
-        {
-            crow::json::wvalue error;
-            error["error"] = "Invalid JSON format";
-            error["message"] = "Request body must be valid JSON";
-            return crow::response(400, error);
-        }
-
-        // Validate username field exists
-        if (!body.has("username"))
-        {
-            crow::json::wvalue error;
-            error["error"] = "Missing field";
-            error["message"] = "Username field is required";
-            return crow::response(400, error);
-        }
+        if (!body) return crow::response(400, "Invalid JSON");
+        if (!body.has("username") || !body.has("password")) return crow::response(400, "Missing credentials");
 
         std::string username = body["username"].s();
+        std::string password = body["password"].s();
 
-        // Validate username not empty
-        if (username.empty())
-        {
-            crow::json::wvalue error;
-            error["error"] = "Invalid username";
-            error["message"] = "Username cannot be empty";
-            return crow::response(400, error);
-        }
-
-        // Check if user exists
-        auto it = m_users.find(username);
-        if (it == m_users.end())
+        auto userOpt = DatabaseManager::loginUser(username, password);
+        if (!userOpt)
         {
             crow::json::wvalue error;
             error["error"] = "Authentication failed";
-            error["message"] = "User not found. Please register first";
-            return crow::response(404, error);
+            error["message"] = "Invalid username or password.";
+            return crow::response(401, error);
         }
 
-        // Generate new token on login
-        std::string newToken = GenerateToken(username);
-        
-        // Remove old token
-        m_tokens.erase(it->second.sessionToken);
-        
-        // Update user with new token
-        it->second.sessionToken = newToken;
-        m_tokens[newToken] = username;
+        std::string token = GenerateToken(username);
+
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+
+            m_tokens[token] = username;
+        }
 
         crow::json::wvalue response;
         response["username"] = username;
-        response["token"] = newToken;
+        response["token"] = token;
         response["status"] = "logged_in";
         response["message"] = "Login successful";
 
@@ -155,60 +114,17 @@ namespace http
     crow::response AuthHandler::Logout(const crow::request& req)
     {
         std::lock_guard<std::mutex> lock(m_mutex);
-
-        // Validate JSON body
         auto body = crow::json::load(req.body);
-        if (!body)
-        {
-            crow::json::wvalue error;
-            error["error"] = "Invalid JSON format";
-            error["message"] = "Request body must be valid JSON";
-            return crow::response(400, error);
-        }
-
-        // Validate token field exists
-        if (!body.has("token"))
-        {
-            crow::json::wvalue error;
-            error["error"] = "Missing field";
-            error["message"] = "Token field is required";
-            return crow::response(400, error);
-        }
+        if (!body || !body.has("token")) return crow::response(400, "Missing token");
 
         std::string token = body["token"].s();
-
-        // Validate token not empty
-        if (token.empty())
+        if (m_tokens.erase(token))
         {
-            crow::json::wvalue error;
-            error["error"] = "Invalid token";
-            error["message"] = "Token cannot be empty";
-            return crow::response(400, error);
-        }
-
-        // Find and invalidate token
-        auto tokenIt = m_tokens.find(token);
-        if (tokenIt != m_tokens.end())
-        {
-            std::string username = tokenIt->second;
-            m_tokens.erase(tokenIt);
-            
-            auto userIt = m_users.find(username);
-            if (userIt != m_users.end())
-            {
-                userIt->second.sessionToken = "";
-            }
-
             crow::json::wvalue response;
             response["status"] = "logged_out";
-            response["message"] = "Logout successful";
             return crow::response(200, response);
         }
-
-        crow::json::wvalue error;
-        error["error"] = "Invalid token";
-        error["message"] = "Token not found or already expired";
-        return crow::response(404, error);
+        return crow::response(404, "Token not found");
     }
 
     bool AuthHandler::ValidateToken(const std::string& token)
@@ -216,49 +132,20 @@ namespace http
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_tokens.find(token) != m_tokens.end();
     }
-    std::string AuthHandler::HashPassword(const std::string& password)
-    {
-        std::hash<std::string> hasher;
-        size_t hashValue = hasher(password);
 
-        std::stringstream ss;
-        ss << std::hex << hashValue;
-        return ss.str();
-    }
-    crow::response AuthHandler::RegisterWithPassword(const crow::request& req)
-    {
-        auto data = crow::json::load(req.body);
-        std::string username = data["username"].s();
-        std::string password = data["password"].s();
-
-        std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_users.find(username) != m_users.end())
-            return crow::response(409, "User already exists");
-
-        User user;
-        user.username = username;
-        user.sessionToken = "";
-        user.hashedPassword = HashPassword(password); // adaugă hashedPassword în User
-        m_users[username] = user;
-        return crow::response(200, "User registered");
-    }
-    bool AuthHandler::CheckPassword(const std::string& username, const std::string& password)
-    {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        auto it = m_users.find(username);
-        if (it == m_users.end()) return false;
-        return it->second.hashedPassword == HashPassword(password);
-    }
     crow::response AuthHandler::GetProfile(const std::string& token)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        auto it = m_tokens.find(token);
-        if (it == m_tokens.end()) return crow::response(401, "Invalid token");
+ 
+        std::string username;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            auto it = m_tokens.find(token);
+            if (it == m_tokens.end()) return crow::response(401, "Invalid token");
+            username = it->second;
+        }
 
-        const User& user = m_users[it->second];
-        crow::json::wvalue res;
-        res["username"] = user.username;
-        res["gamesPlayed"] = user.gamesPlayed; // presupun că adaugi câmp
-        return crow::response{ res };
+ 
+        
+        return crow::response(501, "Not implemented yet");
     }
 }

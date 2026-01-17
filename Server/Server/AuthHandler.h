@@ -6,21 +6,13 @@
 #include <sstream>
 #include <iomanip>
 #include <functional>
+#include "../Database/Database/DatabaseManager.h" // Includes db/Models.h
 
 namespace http
 {
-    struct User
-    {
-        std::string username;
-        std::string sessionToken;
-        std::string hashedPassword;
-        int gamesPlayed = 0;
-    };
-
     class AuthHandler
     {
     private:
-        std::map<std::string, User> m_users; // username -> User
         std::map<std::string, std::string> m_tokens; // token -> username
         std::mutex m_mutex;
 
@@ -32,9 +24,9 @@ namespace http
         crow::response Logout(const crow::request& req);
         bool ValidateToken(const std::string& token);
 
-        std::string HashPassword(const std::string& password);
-        crow::response RegisterWithPassword(const crow::request& req);
-        bool CheckPassword(const std::string& username, const std::string& password);
+        // Helper not strictly needed if DB handles it, but maybe useful?
+        // std::string HashPassword(const std::string& password); 
+        
         crow::response GetProfile(const std::string& token);
     };
 }

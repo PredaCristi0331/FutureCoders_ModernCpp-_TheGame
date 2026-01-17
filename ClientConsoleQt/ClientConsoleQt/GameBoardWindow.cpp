@@ -36,20 +36,14 @@ void GameBoardWindow::setupUI() {
     // Left side: Game Area (80%)
     auto* gameLayout = new QVBoxLayout();
     
-    // 1. Opponents Area (Top)
+    // Opponents Area (Top)
     opponentsArea = new QWidget(this);
     opponentsArea->setFixedHeight(120);
     auto* oppLayout = new QHBoxLayout(opponentsArea);
     oppLayout->setAlignment(Qt::AlignCenter);
     oppLayout->setSpacing(30);
 
-    // Mock Opponents for now (Will be dynamic later)
-    QStringList mockNames = {"Alex", "Maria", "John"};
-    for (const auto& name : mockNames) {
-        auto* opp = new OpponentWidget(name, this);
-        opponents.push_back(opp);
-        oppLayout->addWidget(opp);
-    }
+    // Opponents will be added dynamically via updateGameState
     
     // 2. Piles Area (Center)
     pilesArea = new QWidget(this);
@@ -105,7 +99,13 @@ void GameBoardWindow::setupUI() {
     auto* handLayout = new QHBoxLayout(handArea);
     handLayout->setAlignment(Qt::AlignCenter);
     
+    // Turn Indicator
+    turnLabel = new QLabel("Waiting...", this);
+    turnLabel->setAlignment(Qt::AlignCenter);
+    turnLabel->setStyleSheet("font-size: 24px; font-weight: bold; color: #fab1a0; margin-bottom: 10px;");
+    
     gameLayout->addWidget(opponentsArea);
+    gameLayout->addWidget(turnLabel); // Add between opponnets and piles? Or above piles.
     gameLayout->addWidget(pilesArea);
     gameLayout->addWidget(handArea);
     
@@ -209,7 +209,16 @@ void GameBoardWindow::updateGameState(const GameState& state) {
     // Let's Check GameClient.cpp PollGameState... It ONLY parses piles and hand and players. Not deckCount.
     // We should fix GameClient parsing too if we want deck count.
     
-    // For now, ignore deck count provided by server if not in GameState struct.
+    // 4. Update Turn Indicator
+    if(state.isMyTurn) {
+        turnLabel->setText("RÂNDUL TĂU!");
+        turnLabel->setStyleSheet("font-size: 28px; font-weight: bold; color: #2ecc71;"); // Green
+        handArea->setEnabled(true);
+    } else {
+        turnLabel->setText(QString("Rândul lui %1").arg(QString::fromStdString(state.currentPlayerName)));
+        turnLabel->setStyleSheet("font-size: 24px; font-weight: bold; color: #fab1a0;"); // Orange
+        handArea->setEnabled(false);
+    }
 }
 
 void GameBoardWindow::updateHandUI() {

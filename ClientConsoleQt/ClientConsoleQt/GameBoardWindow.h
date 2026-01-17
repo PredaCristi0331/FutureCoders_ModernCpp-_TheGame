@@ -64,6 +64,7 @@ private:
     void updateHandUI(); // Mock for now
 
     // Inline Commit 3: Notification Logic
+    QLabel* turnLabel{nullptr};
     QLabel* notificationLabel{nullptr};
     void showNotification(const QString& message);
     void setupNotificationUI();
