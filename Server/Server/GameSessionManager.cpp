@@ -93,6 +93,17 @@ namespace http
         
         session.table->AddGamer(playerName);
 
+        // Auto-start if full
+        if (session.currentPlayers == session.maxPlayers) {
+            session.status = "playing";
+            session.table->SetNrGamer(session.currentPlayers); // Should match maxPlayers
+            session.table->AddInitialCards();
+            session.table->MixingDeckCards();
+            session.table->IssuerCard();
+            session.currentPlayerIndex = 0;
+            // Maybe notify or log
+        }
+
         crow::json::wvalue response;
         response["gameId"] = gameId;
         response["playerName"] = playerName;
@@ -206,7 +217,24 @@ namespace http
         response["currentPlayerIndex"] = session.currentPlayerIndex;
         response["currentPlayerName"] = session.playerNames[session.currentPlayerIndex];
         
-        response["deckCount"] = session.table->SizeDeckCards();
+        response["currentPlayers"] = session.currentPlayers;
+        response["maxPlayers"] = session.maxPlayers;
+        
+        crow::json::wvalue piles;
+        if (session.table) {
+            response["deckCount"] = session.table->SizeDeckCards();
+            piles["inc1"] = session.table->GetLastCardFromIncreasingFirst().GetCardNumber();
+            piles["inc2"] = session.table->GetLastCardFromIncreasingSecond().GetCardNumber();
+            piles["dec1"] = session.table->GetLastCardFromDecreasingFirst().GetCardNumber();
+            piles["dec2"] = session.table->GetLastCardFromDecreasingSecond().GetCardNumber();
+        } else {
+             response["deckCount"] = 98;
+             piles["inc1"] = 1;
+             piles["inc2"] = 1;
+             piles["dec1"] = 100;
+             piles["dec2"] = 100;
+        }
+        response["piles"] = std::move(piles);
         
         int requestPlayerIndex = userId;
         
@@ -273,6 +301,28 @@ namespace http
         if(session.table->IsGameWon()) {
             session.status = "finished";
              return crow::response(200, "Game Won!");
+        }
+        
+        // --- Auto-End Turn Logic (User Request) ---
+        // 1. Refill Hand
+        int targetHandSize = 6;
+        if(session.maxPlayers == 2) targetHandSize = 8;
+        else if(session.maxPlayers == 3) targetHandSize = 7;
+        
+        game::Player& player = session.table->GetGamer(playerIndex);
+        while(player.GetCards().size() < targetHandSize && session.table->SizeDeckCards() > 0) {
+             game::Card c = session.table->DeckCardsLast();
+             session.table->RemoveDeckCardsLast();
+             session.table->PushCard(c, playerIndex);
+        }
+
+        // 2. Next Turn
+        session.currentPlayerIndex = (session.currentPlayerIndex + 1) % session.currentPlayers;
+
+        // 3. Check Loss for Next Player
+        if(session.table->IsGameLost(session.currentPlayerIndex)) {
+            session.status = "finished";
+             return crow::response(200, "Move Accepted. Next player blocked... GAME OVER (Lost)");
         }
         
          return crow::response(200, "Move Accepted");
