@@ -70,11 +70,11 @@ namespace
 
                 foreign_key(&ChatMessage::game_session_id).references(&GameSession::id).on_delete.cascade(),
                 foreign_key(&ChatMessage::user_id).references(&User::id).on_delete.cascade()
-            ),
+            )
 
-            make_index("idx_pgs_user", &PlayerGameStats::user_id),
-            make_index("idx_pgs_session", &PlayerGameStats::game_session_id),
-            make_index("idx_chat_session", &ChatMessage::game_session_id)
+            // make_index("idx_pgs_user", &PlayerGameStats::user_id),
+            // make_index("idx_pgs_session", &PlayerGameStats::game_session_id)
+            // make_index("idx_chat_session", &ChatMessage::game_session_id)
         );
 
         

@@ -1,40 +1,42 @@
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
 #include "ChatHeandler.h"
+#include "../Database/Database/DatabaseManager.h"
 #include <ctime>
-
-using chat::ChatMessage;
 
 namespace http
 {
-    ChatHeandler::ChatHeandler(ChatStorage& storage)
-        : m_storage(storage)
+    ChatHeandler::ChatHeandler()
     {
     }
+
     crow::response ChatHeandler::PostMessage(const crow::request& req)
     {
         auto body = crow::json::load(req.body);
+        if (!body) return crow::response(400, "Invalid JSON");
 
         int gameId = body["gameId"].i();
         int playerId = body["playerId"].i();
         std::string text = body["text"].s();
 
+        if (text.empty()) return crow::response(400, "Empty message");
+
         ChatMessage msg;
-        msg.SetGameId(gameId);
-        msg.SetPlayerId(playerId);
-        msg.SetText(text);
+        msg.game_session_id = gameId;
+        msg.user_id = playerId;
+        msg.message = text;
 
         std::time_t now = std::time(nullptr);
-        msg.SetTimestamp(std::to_string(now));
+        msg.timestamp = std::to_string(now);
 
-        m_storage.AddMessage(msg);
+        DatabaseManager::addChatMessage(msg);
 
         return crow::response(200, "{\"status\":\"sent\"}");
     }
 
     crow::response ChatHeandler::GetMessages(int gameId)
     {
-        auto messages = m_storage.GetMessagesForGame(gameId);
+        auto messages = DatabaseManager::getChatMessages(gameId);
 
         crow::json::wvalue result;
         result = crow::json::wvalue::list();
@@ -43,11 +45,11 @@ namespace http
         for (const auto& msg : messages)
         {
             crow::json::wvalue item;
-            item["id"] = msg.GetId();
-            item["playerId"] = msg.GetPlayerId();
-            item["gameId"] = msg.GetGameId();
-            item["text"] = msg.GetText();
-            item["timestamp"] = msg.GetTimestamp();
+            item["id"] = msg.id;
+            item["playerId"] = msg.user_id;
+            item["gameId"] = msg.game_session_id;
+            item["text"] = msg.message;
+            item["timestamp"] = msg.timestamp;
             result[i++] = std::move(item);
         }
 

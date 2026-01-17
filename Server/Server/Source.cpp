@@ -13,7 +13,6 @@ import TheGame;
 
 #include <crow.h>
 #include "../Database/Database/DatabaseManager.h"
-#include "ChatStorage.h"
 #include "ChatHeandler.h"
 #include "GameSessionManager.h"
 #include "AuthHandler.h"
@@ -40,9 +39,7 @@ int main()
     http::Logger::Log(http::Logger::Level::INFO, "Database initialized at game_v3.db");
 
     // Chat
-    http::ChatStorage storage;
-    storage.Initialize();
-    http::ChatHeandler chat(storage);
+    http::ChatHeandler chat;
     
     http::GameSessionManager gameManager;
     http::AuthHandler auth;

@@ -19,6 +19,13 @@ void OpponentWidget::setCardCount(int count) {
     }
 }
 
+void OpponentWidget::setName(const QString& newName) {
+    name = newName;
+    if (nameLabel) {
+        nameLabel->setText(name);
+    }
+}
+
 void OpponentWidget::setActive(bool active) {
     if (isActive != active) {
         isActive = active;

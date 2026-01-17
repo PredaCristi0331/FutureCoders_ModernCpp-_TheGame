@@ -1,5 +1,6 @@
 #include "LobbyWindow.h"
 #include "RulesWindow.h"
+#include "GameClient.h"
 #include <QFont>
 
 LobbyWindow::LobbyWindow(GameClient* client, QWidget* parent) 
@@ -256,9 +257,7 @@ void LobbyWindow::onCreateGameClicked() {
     });
 }
 
-void LobbyWindow::onPlayClicked() {
-    // Deprecated
-}
+
 
 void LobbyWindow::onMatchmakingTimeout() {
     // Joc găsit - emite semnal pentru a începe jocul

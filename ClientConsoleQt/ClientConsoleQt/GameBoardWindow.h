@@ -11,6 +11,7 @@
 #include <QVBoxLayout>
 #include <vector>
 
+#include "GameState.h"
 class GameClient;
 class CardWidget;
 class PileWidget;

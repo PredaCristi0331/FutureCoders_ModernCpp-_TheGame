@@ -175,7 +175,7 @@ void GameBoardWindow::updateGameState(const GameState& state) {
     // Expect 4 piles.
     if(state.piles.size() == 4) {
         for(size_t i=0; i<4 && i<piles.size(); ++i) {
-            piles[i]->setCardValue(state.piles[i].topCardValue);
+            piles[i]->setTopCardValue(state.piles[i].topCardValue);
         }
     }
     
