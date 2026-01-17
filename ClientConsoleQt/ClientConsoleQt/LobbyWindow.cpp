@@ -34,6 +34,10 @@ void LobbyWindow::setUsername(const QString& username) {
     if (welcomeLabel) {
         welcomeLabel->setText(QString("Bine ai venit, %1!").arg(username));
     }
+    // Always hide waiting screen when setting username (e.g., when coming back from game)
+    if (waitingOverlay) {
+        hideWaitingScreen();
+    }
 }
 
 void LobbyWindow::setupUI() {

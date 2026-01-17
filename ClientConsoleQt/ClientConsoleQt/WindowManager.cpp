@@ -48,6 +48,14 @@ void WindowManager::initWindows() {
     
     gameBoardWindow = new GameBoardWindow(gameClient, this);
     addWidget(gameBoardWindow);
+    connect(gameBoardWindow, &GameBoardWindow::backToLobby,
+            [this]() { 
+                // Reset game state when leaving game
+                if (gameClient) {
+                    gameClient->LeaveGame();
+                }
+                showLobbyWindow(""); 
+            });
 }
 
 void WindowManager::showLoginWindow() {

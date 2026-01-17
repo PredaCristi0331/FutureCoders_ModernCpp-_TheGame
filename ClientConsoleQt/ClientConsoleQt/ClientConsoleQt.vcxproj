@@ -113,6 +113,7 @@
     <QtMoc Include="PileWidget.h" />
     <QtMoc Include="CardWidget.h" />
     <QtMoc Include="OpponentWidget.h" />
+    <QtMoc Include="GameOverDialog.h" />
     <QtMoc Include="NetworkClient.h" />
     <ClCompile Include="ClientConsoleQt.cpp" />
     <ClCompile Include="main.cpp" />
@@ -127,6 +128,7 @@
     <ClCompile Include="PileWidget.cpp" />
     <ClCompile Include="CardWidget.cpp" />
     <ClCompile Include="OpponentWidget.cpp" />
+    <ClCompile Include="GameOverDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TEMPLATE_Window.h" />

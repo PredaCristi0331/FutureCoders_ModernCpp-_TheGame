@@ -28,6 +28,9 @@ public:
 
     void setUsername(const QString& username);
 
+signals:
+    void backToLobby();
+
 private slots:
     void updateGameState(const GameState& state);
     void onSendChatClicked();

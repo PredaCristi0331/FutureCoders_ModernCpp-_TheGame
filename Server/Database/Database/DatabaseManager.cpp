@@ -7,6 +7,7 @@
 #include <regex>
 #include <algorithm>
 #include <numeric>
+#include <iostream>
 
 using namespace sqlite_orm;
 
@@ -27,7 +28,10 @@ namespace
                 make_column("password", &User::password),
 
                 make_column("hours_played_seconds", &User::hours_played_seconds, default_value(0)),
-                make_column("performance_score", &User::performance_score, default_value(1))
+                make_column("performance_score", &User::performance_score, default_value(1)),
+                make_column("games_played", &User::games_played, default_value(0)),
+                make_column("games_won", &User::games_won, default_value(0)),
+                make_column("games_lost", &User::games_lost, default_value(0))
             ),
 
             make_table("game_sessions",
@@ -110,6 +114,9 @@ bool DatabaseManager::registerUser(const std::string& username, const std::strin
     u.password = password;
     u.hours_played_seconds = 0;
     u.performance_score = 1;
+    u.games_played = 0;
+    u.games_won = 0;
+    u.games_lost = 0;
 
     try {
         storage().insert(u);
@@ -319,23 +326,18 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
 
     profile.username = uopt->username;
     profile.hours_played_seconds = uopt->hours_played_seconds;
+    profile.games_played = uopt->games_played;
+    profile.games_won = uopt->games_won;
+    profile.games_lost = uopt->games_lost;
+    profile.performance_score = uopt->performance_score;
 
+    // Calculate average cards only if we still want it, otherwise we can skip querying stats if this is expensive.
+    // User asked to "take data from Users table".
+    // I will keep the avg calc but use the Users table for the main stats.
+    
     auto stats = storage().get_all<PlayerGameStats>(
         where(c(&PlayerGameStats::user_id) == userId)
     );
-
-    profile.games_played = static_cast<int>(stats.size());
-
-    auto isWin = [](const PlayerGameStats& s) {
-        return s.won;
-        };
-
-    auto isLoss = [](const PlayerGameStats& s) {
-        return !s.won;
-        };
-
-    int gamesWon = std::count_if(stats.begin(), stats.end(), isWin);
-    int gamesLost = std::count_if(stats.begin(), stats.end(), isLoss);
 
     long long sumCardsOnLoss = std::accumulate(
         stats.begin(), stats.end(), 0LL,
@@ -344,20 +346,15 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
         }
     );
 
-    int lossCount = gamesLost;
-
-    profile.games_won = gamesWon;
-    profile.games_lost = gamesLost;
-
-    profile.avg_cards_on_loss = (lossCount > 0)
-        ? static_cast<double>(sumCardsOnLoss) / lossCount
+    profile.avg_cards_on_loss = (profile.games_lost > 0)
+        ? static_cast<double>(sumCardsOnLoss) / profile.games_lost
         : 0.0;
 
     auto calcWinRate = [](int won, int played) -> double {
         return (played > 0) ? static_cast<double>(won) / played : 0.0;
         };
 
-    double winRate = calcWinRate(gamesWon, profile.games_played);
+    double winRate = calcWinRate(profile.games_won, profile.games_played);
 
     auto scoreFromWinRate = [](double wr) {
         if (wr < 0.2) return 1;
@@ -369,8 +366,8 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
 
     int score = scoreFromWinRate(winRate);
 
-    if (gamesLost > 0 && profile.avg_cards_on_loss >= 10.0) score -= 1;
-    if (gamesLost > 0 && profile.avg_cards_on_loss >= 15.0) score -= 1;
+    if (profile.games_lost > 0 && profile.avg_cards_on_loss >= 10.0) score -= 1;
+    if (profile.games_lost > 0 && profile.avg_cards_on_loss >= 15.0) score -= 1;
 
     profile.performance_score = clampScore(score);
     return profile;
@@ -379,31 +376,80 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
 
 
 void DatabaseManager::recomputeAndUpdateUserStats(int userId) {
-    auto profile = getUserProfile(userId);
-
+    // Get all player stats for this user
     auto userSessions = storage().get_all<PlayerGameStats>(
         where(c(&PlayerGameStats::user_id) == userId)
     );
 
+    // Calculate statistics from PlayerGameStats
+    int games_played = 0;
+    int games_won = 0;
+    int games_lost = 0;
     std::int64_t totalSec = 0;
+    long long sumCardsOnLoss = 0;
+
     for (const auto& p : userSessions) {
         auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == p.game_session_id));
         if (!sessions.empty()) {
             const auto& s = sessions.front();
             if (s.status == static_cast<int>(GameStatus::Finished)) {
+                games_played++;
+                if (p.won) {
+                    games_won++;
+                } else {
+                    games_lost++;
+                    sumCardsOnLoss += p.final_cards_in_hand;
+                }
                 totalSec += std::max<std::int64_t>(0, s.duration_seconds);
             }
         }
     }
 
+    // Calculate performance score
+    double avgCardsOnLoss = (games_lost > 0) 
+        ? static_cast<double>(sumCardsOnLoss) / games_lost 
+        : 0.0;
+
+    auto calcWinRate = [](int won, int played) -> double {
+        return (played > 0) ? static_cast<double>(won) / played : 0.0;
+    };
+
+    double winRate = calcWinRate(games_won, games_played);
+
+    auto scoreFromWinRate = [](double wr) {
+        if (wr < 0.2) return 1;
+        if (wr < 0.4) return 2;
+        if (wr < 0.6) return 3;
+        if (wr < 0.8) return 4;
+        return 5;
+    };
+
+    int score = scoreFromWinRate(winRate);
+
+    if (games_lost > 0 && avgCardsOnLoss >= 10.0) score -= 1;
+    if (games_lost > 0 && avgCardsOnLoss >= 15.0) score -= 1;
+
+    score = clampScore(score);
+
+    // Update user table
     auto uopt = getUserByIdSafe(userId);
-    if (!uopt) return;
+    if (!uopt) {
+        std::cerr << "[Stats] User not found: " << userId << std::endl;
+        return;
+    }
 
     auto u = *uopt;
     u.hours_played_seconds = totalSec;
-    u.performance_score = profile.performance_score;
+    u.performance_score = score;
+    u.games_played = games_played;
+    u.games_won = games_won;
+    u.games_lost = games_lost;
 
     storage().update(u);
+    
+    std::cout << "[Stats] Updated user " << userId << ": games_played=" << games_played 
+              << ", games_won=" << games_won << ", games_lost=" << games_lost 
+              << ", performance_score=" << score << std::endl;
 }
 
 void DatabaseManager::addChatMessage(const ChatMessage& msg) {
@@ -421,4 +467,10 @@ std::vector<ChatMessage> DatabaseManager::getChatMessages(int sessionId, int lim
         sqlite_orm::limit(limit)
     );
     return msgs;
+}
+
+std::optional<User> DatabaseManager::getUserByUsername(const std::string& username) {
+    auto users = storage().get_all<User>(where(c(&User::username) == username));
+    if (users.empty()) return std::nullopt;
+    return users.front();
 }

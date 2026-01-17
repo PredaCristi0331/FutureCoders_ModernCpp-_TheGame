@@ -23,6 +23,9 @@ signals:
 private slots:
     void onBackClicked();
 
+protected:
+    void showEvent(QShowEvent* event) override;
+
 private:
     GameClient* m_client;
     QString currentUsername;

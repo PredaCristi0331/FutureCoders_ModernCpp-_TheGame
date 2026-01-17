@@ -3,6 +3,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QDate>
+#include <QShowEvent>
 
 ProfileWindow::ProfileWindow(GameClient* client, QWidget* parent) 
     : QWidget(parent)
@@ -26,11 +27,24 @@ void ProfileWindow::setUsername(const QString& username) {
 }
 
 void ProfileWindow::refreshStats() {
-    if (!m_client) return;
+    if (!m_client) {
+        if (statsLabel) {
+            statsLabel->setText("Eroare: Client indisponibil");
+        }
+        return;
+    }
 
     // Fetch user profile from server
     // Need userId first. GameClient has m_userId after Login.
     int userId = m_client->GetUserId();
+    
+    if (userId < 0) {
+        if (statsLabel) {
+            statsLabel->setText("Eroare: Utilizator neautentificat");
+        }
+        return;
+    }
+    
     auto profile = m_client->GetUserProfile(userId);
 
     if (profile) {
@@ -52,7 +66,9 @@ void ProfileWindow::refreshStats() {
          .arg(profile->games_lost)
         );
     } else {
-        statsLabel->setText("Nu s-au putut încărca datele...");
+        if (statsLabel) {
+            statsLabel->setText("Eroare: Nu s-au putut încărca datele de la server");
+        }
     }
 }
 
@@ -150,4 +166,12 @@ void ProfileWindow::connectSignals() {
 
 void ProfileWindow::onBackClicked() {
     emit backToLobby();
+}
+
+void ProfileWindow::showEvent(QShowEvent* event) {
+    QWidget::showEvent(event);
+    // Refresh stats when window is shown
+    if (statsLabel && m_client) {
+        refreshStats();
+    }
 }

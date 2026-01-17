@@ -28,5 +28,6 @@ struct GameState {
     bool isMyTurn;
     std::string currentPlayerName;
     std::string status; // "waiting", "playing", "finished"
+    bool won = false; 
     std::vector<std::string> chatMessages;
 };

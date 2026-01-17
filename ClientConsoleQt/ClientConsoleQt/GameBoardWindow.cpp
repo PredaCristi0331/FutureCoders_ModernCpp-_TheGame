@@ -3,6 +3,7 @@
 #include "CardWidget.h"
 #include "PileWidget.h"
 #include "OpponentWidget.h"
+#include "GameOverDialog.h"
 #include <QSplitter>
 #include <QMessageBox>
 #include <QTimer>
@@ -157,9 +158,24 @@ void GameBoardWindow::setupChatUI(QVBoxLayout* layout) {
 }
 
 void GameBoardWindow::updateGameState(const GameState& state) {
-    // 1. Update Opponents
-    // Clear existing opponents if count mismatch or full refresh needed
-    // For simplicity, let's update if exists, or recreate if count differs
+    if (state.status == "finished") {
+
+         static bool dialogShown = false;
+         
+         if (!this->findChild<GameOverDialog*>()) {
+             auto* dialog = new GameOverDialog(state.won, state.deckSize, this);
+             connect(dialog, &GameOverDialog::exitRequested, [this]() {
+                  emit backToLobby();
+             });
+             connect(dialog, &GameOverDialog::restartRequested, [this]() {
+                  emit backToLobby(); // Restart flow simplier via lobby for now
+             });
+             dialog->exec();
+         }
+         return; 
+    }
+
+  
     if (opponents.size() != state.otherPlayers.size()) {
         // Recreate
         qDeleteAll(opponents);

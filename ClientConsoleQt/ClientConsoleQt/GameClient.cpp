@@ -20,12 +20,15 @@ bool GameClient::Login(const std::string& username, const std::string& password)
             m_username = username;
             if (data.contains("userId")) {
                 m_userId = data["userId"].get<int>();
+                std::cout << "Login successful! UserID: " << m_userId << std::endl;
+                return true;
             } else {
-                m_userId = 1; // Fallback? Or fail?
+                std::cout << "Login error: userId missing from response" << std::endl;
+                return false;
             }
-            
-            std::cout << "Login successful! UserID: " << m_userId << std::endl;
-            return true;
+        } catch (const std::exception& e) {
+            std::cout << "Login error: Invalid response format - " << e.what() << std::endl;
+            return false;
         } catch (...) {
             std::cout << "Login error: Invalid response format" << std::endl;
             return false;
@@ -200,6 +203,7 @@ bool GameClient::PollGameState() {
             auto data = json::parse(response.text);
 
             m_currentState.status = data.value("status", "unknown");
+            m_currentState.won = data.value("won", false);
             m_currentState.currentPlayers = data.value("currentPlayers", 0);
             m_currentState.maxPlayers = data.value("maxPlayers", 0);
             m_currentState.deckSize = data.value("deckCount", 98); // Parse deckCount to deckSize
@@ -248,10 +252,17 @@ bool GameClient::PollGameState() {
 }
 
 std::optional<GameClient::UserProfile> GameClient::GetUserProfile(int userId) {
-    if (userId < 0) return std::nullopt;
+    if (userId < 0) {
+        std::cout << "GetUserProfile: Invalid userId: " << userId << std::endl;
+        return std::nullopt;
+    }
 
     std::string endpoint = "/user/" + std::to_string(userId) + "/profile";
+    std::cout << "GetUserProfile: Requesting profile from: " << endpoint << std::endl;
     auto response = m_network.Get(endpoint);
+
+    std::cout << "GetUserProfile: Response status: " << response.status_code << std::endl;
+    std::cout << "GetUserProfile: Response body: " << response.text << std::endl;
 
     if (response.status_code == 200) {
         try {
@@ -263,10 +274,29 @@ std::optional<GameClient::UserProfile> GameClient::GetUserProfile(int userId) {
             p.games_lost = data.value("games_lost", 0);
             p.performance_score = data.value("performance_score", 1);
             p.hours_played = data.value("hours_played", 0.0);
+            
+            std::cout << "GetUserProfile: Parsed profile - username: " << p.username 
+                      << ", games_played: " << p.games_played 
+                      << ", games_won: " << p.games_won 
+                      << ", games_lost: " << p.games_lost 
+                      << ", performance_score: " << p.performance_score 
+                      << ", hours_played: " << p.hours_played << std::endl;
+            
             return p;
+        } catch (const std::exception& e) {
+            std::cout << "Error parsing profile: " << e.what() << std::endl;
         } catch (...) {
-            std::cout << "Error parsing profile" << std::endl;
+            std::cout << "Error parsing profile: Unknown exception" << std::endl;
         }
+    } else {
+        std::cout << "GetUserProfile: Request failed with status " << response.status_code << std::endl;
     }
     return std::nullopt;
+}
+
+void GameClient::LeaveGame() {
+    m_isInGame = false;
+    m_gameId = -1;
+    m_playerIndex = -1;
+    std::cout << "Left game. Reset game state." << std::endl;
 }

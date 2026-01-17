@@ -105,6 +105,7 @@ namespace http
         crow::json::wvalue response;
         response["username"] = username;
         response["token"] = token;
+        response["userId"] = userOpt->id;  // Include userId in response
         response["status"] = "logged_in";
         response["message"] = "Login successful";
 
@@ -135,7 +136,6 @@ namespace http
 
     crow::response AuthHandler::GetProfile(const std::string& token)
     {
- 
         std::string username;
         {
             std::lock_guard<std::mutex> lock(m_mutex);
@@ -144,8 +144,23 @@ namespace http
             username = it->second;
         }
 
- 
+        if(username.empty()) return crow::response(401, "Invalid token");
+
+        auto userOpt = DatabaseManager::getUserByUsername(username);
+        if(!userOpt) return crow::response(404, "User not found");
         
-        return crow::response(501, "Not implemented yet");
+        UserProfile profile = DatabaseManager::getUserProfile(userOpt->id);
+        
+        crow::json::wvalue response;
+        response["username"] = profile.username;
+        response["games_played"] = profile.games_played;
+        response["games_won"] = profile.games_won;
+        response["games_lost"] = profile.games_lost;
+        response["performance_score"] = profile.performance_score;
+        
+        // Convert seconds to hours for display (double)
+        response["hours_played"] = static_cast<double>(profile.hours_played_seconds) / 3600.0;
+        
+        return crow::response(200, response);
     }
 }

@@ -12,6 +12,7 @@ public:
 
     static bool registerUser(const std::string& username, const std::string& password = "");
     static std::optional<User> loginUser(const std::string& username, const std::string& password = "");
+    static std::optional<User> getUserByUsername(const std::string& username);
 
     static int createWaitingSession(const std::string& created_at);
     static bool addPlayerToSession(int sessionId, int userId, bool isHost);

@@ -19,6 +19,7 @@ namespace http
         int maxPlayers;
         int currentPlayers;
         std::string status; // "waiting", "playing", "finished"
+        bool won = false; // Result flag
         std::vector<std::string> playerNames;
         std::vector<int> playerIds; // Map index to database ID, if needed
         

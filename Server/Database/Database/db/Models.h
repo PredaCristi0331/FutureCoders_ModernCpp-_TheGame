@@ -9,6 +9,10 @@ struct User {
 
     std::int64_t hours_played_seconds = 0;
     int performance_score = 1;
+
+    int games_played = 0;
+    int games_won = 0;
+    int games_lost = 0;
 };
 
 enum class GameStatus : int {

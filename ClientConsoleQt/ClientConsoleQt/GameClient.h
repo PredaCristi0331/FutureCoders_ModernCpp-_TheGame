@@ -46,6 +46,7 @@ public:
     bool IsInGame() const { return m_isInGame; }
     int GetUserId() const { return m_userId; }
     int GetGameId() const { return m_gameId; }
+    void LeaveGame(); // Reset game state when leaving
 
 signals:
     void loginSuccess(int userId);
