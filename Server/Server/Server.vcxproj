@@ -147,6 +147,7 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Player.cppm" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="src\sqlite3.c" />
     <ClCompile Include="TheGame.cpp" />
     <ClCompile Include="TheGame.cppm" />
   </ItemGroup>
