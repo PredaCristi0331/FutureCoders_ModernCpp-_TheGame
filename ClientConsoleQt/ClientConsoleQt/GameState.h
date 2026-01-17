@@ -23,6 +23,10 @@ struct GameState {
     std::vector<Card> hand;
     std::vector<PlayerInfo> otherPlayers;
     int deckSize;
+    int currentPlayers;
+    int maxPlayers;
     bool isMyTurn;
+    std::string currentPlayerName;
+    std::string status; // "waiting", "playing", "finished"
     std::vector<std::string> chatMessages;
 };

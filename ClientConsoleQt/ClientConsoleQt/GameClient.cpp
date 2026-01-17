@@ -7,22 +7,52 @@ using json = nlohmann::json;
 GameClient::GameClient(const std::string& serverUrl, QObject* parent) 
     : QObject(parent), m_network(serverUrl) {}
 
-bool GameClient::Login(const std::string& username) {
-    json regPayload = {{"username", username}};
-    m_network.Post("/auth/register", regPayload); 
-
-    json payload = {{"username", username}};
+bool GameClient::Login(const std::string& username, const std::string& password) {
+    json payload = {
+        {"username", username},
+        {"password", password}
+    };
     auto response = m_network.Post("/auth/login", payload);
     
     if (response.status_code == 200) {
-        auto data = json::parse(response.text);
-        m_username = username;
-        m_userId = 1; 
-        
-        std::cout << "Login successful!" << std::endl;
-        return true;
+        try {
+            auto data = json::parse(response.text);
+            m_username = username;
+            if (data.contains("userId")) {
+                m_userId = data["userId"].get<int>();
+            } else {
+                m_userId = 1; // Fallback? Or fail?
+            }
+            
+            std::cout << "Login successful! UserID: " << m_userId << std::endl;
+            return true;
+        } catch (...) {
+            std::cout << "Login error: Invalid response format" << std::endl;
+            return false;
+        }
     } else {
         std::cout << "Login failed: " << response.text << std::endl;
+        return false;
+    }
+}
+
+// ... (skipping Register implementation from previous edit as it's separate)
+
+// ...
+
+
+bool GameClient::Register(const std::string& username, const std::string& password) {
+    json regPayload = {
+        {"username", username},
+        {"password", password}
+    };
+    auto response = m_network.Post("/auth/register", regPayload); 
+    
+    if (response.status_code == 200) {
+        std::cout << "Registration successful!" << std::endl;
+        return true;
+    } else {
+        std::cout << "Registration failed: " << response.text << std::endl;
         return false;
     }
 }
@@ -37,7 +67,7 @@ bool GameClient::JoinGame(int gameId) {
     if (response.status_code == 200) {
         auto data = json::parse(response.text);
         m_gameId = gameId; // Use the requested ID
-        m_userId = data["playerIndex"].get<int>();
+        m_playerIndex = data["playerIndex"].get<int>();
         m_isInGame = true;
         emit gameJoined(m_gameId);
         std::cout << "Joined Game " << m_gameId << " successfully." << std::endl;
@@ -77,7 +107,7 @@ void GameClient::PlayCard(int cardValue, int pileIndex) {
     if (!m_isInGame) return;
 
     json payload = {
-        {"playerIndex", m_userId},
+        {"playerIndex", m_playerIndex},
         {"cardValue", cardValue},
         {"pileIndex", pileIndex}
     };
@@ -97,7 +127,7 @@ void GameClient::EndTurn() {
     if (!m_isInGame) return;
 
     json payload = {
-        {"playerIndex", m_userId}
+        {"playerIndex", m_playerIndex}
     };
     
     std::string endpoint = "/game/" + std::to_string(m_gameId) + "/endturn";
@@ -120,8 +150,8 @@ void GameClient::SendChat(const std::string& message) {
 
     json payload = {
         {"gameId", m_gameId},
-        {"playerName", m_username},
-        {"message", message}
+        {"playerId", m_userId},
+        {"text", message}
     };
     m_network.Post("/chat", payload);
 }
@@ -133,15 +163,20 @@ GameState GameClient::GetGameState() {
 bool GameClient::PollGameState() {
     if (!m_isInGame) return false;
 
-    std::string endpoint = "/game/" + std::to_string(m_gameId) + "/state?userId=" + std::to_string(m_userId);
+    std::string endpoint = "/game/" + std::to_string(m_gameId) + "/state?userId=" + std::to_string(m_playerIndex);
     auto response = m_network.Get(endpoint);
     
     if (response.status_code == 200) {
         try {
             auto data = json::parse(response.text);
             
+            m_currentState.status = data.value("status", "unknown");
+            m_currentState.currentPlayers = data.value("currentPlayers", 0);
+            m_currentState.maxPlayers = data.value("maxPlayers", 0);
+
             int curIdx = data.value("currentPlayerIndex", -1);
-            m_currentState.isMyTurn = (curIdx == m_userId);
+            m_currentState.isMyTurn = (curIdx == m_playerIndex);
+            m_currentState.currentPlayerName = data.value("currentPlayerName", "Unknown");
             
             m_currentState.piles.clear();
             auto piles = data["piles"];
@@ -161,7 +196,7 @@ bool GameClient::PollGameState() {
             if(data.contains("players")) {
                 int idx = 0;
                 for(const auto& p : data["players"]) {
-                    if(idx != m_userId) {
+                    if(idx != m_playerIndex) {
                         PlayerInfo pi;
                         pi.id = idx;
                         pi.name = p.value("name", "Unknown");
