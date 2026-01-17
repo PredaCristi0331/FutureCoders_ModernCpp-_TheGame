@@ -27,7 +27,7 @@ public:
     static std::optional<int> findBestWaitingSessionForUser(int userId, int tolerance = 1);
 
     static void savePlayerStats(const PlayerGameStats& stats);
-    static void recomputeAndUpdateUserStats(int userId);
+    static void updateUserStatsIncrement(int userId, bool won, int cardsLeft, std::int64_t durationSeconds);
 
     static std::optional<User> getUserByIdSafe(int userId);
     static UserProfile getUserProfile(int userId);
