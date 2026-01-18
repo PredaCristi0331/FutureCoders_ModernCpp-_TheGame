@@ -30,10 +30,10 @@ private:
 public:
     ~Logger();
 
-    // Singleton pattern
+    
     static Logger& getInstance();
 
-    // Delete copy and move
+    
     Logger(const Logger&) = delete;
     Logger& operator=(const Logger&) = delete;
     Logger(Logger&&) = delete;
@@ -41,7 +41,7 @@ public:
 
     void setMinLevel(LogLevel level) { minLevel_ = level; }
 
-    // Variadic template pentru logging
+   
     template<typename... Args>
     void log(LogLevel level, std::string_view format, Args&&... args) {
         if (level < minLevel_) return;
@@ -59,11 +59,11 @@ public:
             logFile_.flush();
         }
         catch (...) {
-            // Fallback for format errors
+            
         }
     }
 
-    // Convenience methods
+    
     template<typename... Args>
     void debug(std::string_view format, Args&&... args) {
         log(LogLevel::Debug, format, std::forward<Args>(args)...);

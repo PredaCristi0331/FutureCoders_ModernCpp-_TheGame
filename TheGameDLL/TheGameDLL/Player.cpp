@@ -21,7 +21,7 @@ void Player::addCard(std::unique_ptr<Card> card) {
     if (hand_.size() < MAX_HAND_SIZE) {
         hand_.push_back(std::move(card));
 
-        // Sort hand using ranges
+        
         std::ranges::sort(hand_, {}, [](const auto& card) {
             return card->getValue();
             });

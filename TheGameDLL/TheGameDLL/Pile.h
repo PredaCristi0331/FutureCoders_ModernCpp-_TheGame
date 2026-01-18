@@ -19,13 +19,13 @@ private:
     PileType type_;
     int initialValue_;
 
-    // Lambda pentru validare
+    
     std::function<bool(const Card&, const Card&)> validator_;
 
 public:
     explicit Pile(PileType type);
 
-    // Move semantics
+    
     Pile(Pile&& other) noexcept = default;
     Pile& operator=(Pile&& other) noexcept = default;
 
@@ -44,7 +44,7 @@ public:
 
     void reset();
 
-    // Range access
+    
     [[nodiscard]] auto getCards() const -> const std::vector<std::shared_ptr<Card>>& {
         return cards_;
     }

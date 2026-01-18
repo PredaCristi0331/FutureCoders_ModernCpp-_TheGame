@@ -4,7 +4,7 @@
 #include<regex>
 
 
-// Remove 'const' and definition from here, only declare in header as 'extern' if using __declspec(dllimport)
+
 const std::regex playerNameRegex_(R"(^[a-zA-Z0-9_]{3,20}$)");
 const std::regex playCommandRegex_(R"(^play\s+(\d+)\s+(\d+)$)");
 const std::regex fileNameRegex_(R"(^[a-zA-Z0-9_-]+\.save$)");
