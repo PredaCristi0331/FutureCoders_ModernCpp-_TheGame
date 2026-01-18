@@ -11,7 +11,6 @@ GameOverDialog::GameOverDialog(bool victory, int cardsRemaining, QWidget* parent
     setupUI();
     applyStyles();
     
-    // Set message based on cards remaining if loss
     QLabel* msgLabel = findChild<QLabel*>("msgLabel");
     if (msgLabel) {
         if (victory) {

@@ -1,9 +1,7 @@
 #include "WindowManager.h"
 #include "LoginWindow.h"
 #include "LobbyWindow.h"
-// TODO: Include aici ferestre noi când le creezi:
 #include "ProfileWindow.h"
-// #include "GameBoardWindow.h"
 
 #include "GameClient.h"
 #include "GameBoardWindow.h"
@@ -15,23 +13,19 @@ WindowManager::WindowManager(QWidget* parent)
     , profileWindow(nullptr)
     , gameBoardWindow(nullptr)
 {
-    // Initialize GameClient with default URL (can be configurable)
     gameClient = new GameClient("http://localhost:18080", this);
     initWindows();
 }
 
 WindowManager::~WindowManager() {
-    // Widget-urile vor fi șterse automat de Qt
 }
 
 void WindowManager::initWindows() {
-    // Creează LoginWindow
     loginWindow = new LoginWindow(gameClient, this);
     addWidget(loginWindow);
     connect(loginWindow, &LoginWindow::loginSuccessful, 
             this, &WindowManager::showLobbyWindow);
 
-    // Creează LobbyWindow
     lobbyWindow = new LobbyWindow(gameClient, this);
     addWidget(lobbyWindow);
     connect(lobbyWindow, &LobbyWindow::startGame, 
@@ -44,13 +38,12 @@ void WindowManager::initWindows() {
     profileWindow = new ProfileWindow(gameClient, this);
     addWidget(profileWindow);
     connect(profileWindow, &ProfileWindow::backToLobby, 
-            [this]() { showLobbyWindow(""); }); // Lambda for simple redirection
+            [this]() { showLobbyWindow(""); }); 
     
     gameBoardWindow = new GameBoardWindow(gameClient, this);
     addWidget(gameBoardWindow);
     connect(gameBoardWindow, &GameBoardWindow::backToLobby,
             [this]() { 
-                // Reset game state when leaving game
                 if (gameClient) {
                     gameClient->LeaveGame();
                 }
@@ -88,4 +81,3 @@ void WindowManager::showGameBoardWindow(const QString& username) {
         emit windowChanged(GAME_BOARD);
     }
 }
-

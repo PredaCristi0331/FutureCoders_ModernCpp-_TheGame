@@ -75,13 +75,9 @@ namespace
                 foreign_key(&ChatMessage::game_session_id).references(&GameSession::id).on_delete.cascade(),
                 foreign_key(&ChatMessage::user_id).references(&User::id).on_delete.cascade()
             )
-
-            // make_index("idx_pgs_user", &PlayerGameStats::user_id),
-            // make_index("idx_pgs_session", &PlayerGameStats::game_session_id)
-            // make_index("idx_chat_session", &ChatMessage::game_session_id)
         );
 
-        
+
         stor.sync_schema(true);
         return stor;
     }
@@ -216,17 +212,17 @@ bool DatabaseManager::setSessionRunning(int sessionId, const std::string& start_
 }
 
 bool DatabaseManager::finishSession(int sessionId,
-                                    bool won,
-                                    int cards_left_in_draw,
-                                    int total_moves,
-                                    const std::string& end_time,
-                                    std::int64_t duration_seconds) {
+    bool won,
+    int cards_left_in_draw,
+    int total_moves,
+    const std::string& end_time,
+    std::int64_t duration_seconds) {
     auto sessions = storage().get_all<GameSession>(where(c(&GameSession::id) == sessionId));
     if (sessions.empty()) return false;
 
     auto s = sessions.front();
     if (s.status == static_cast<int>(GameStatus::Finished)) return false;
-    
+
     s.status = static_cast<int>(GameStatus::Finished);
     s.won = won;
     s.cards_left_in_draw = cards_left_in_draw;
@@ -331,8 +327,8 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
     profile.games_lost = uopt->games_lost;
     profile.performance_score = uopt->performance_score;
 
-    // avg_cards_on_loss is not stored in Users table and not used in UI currently.
-    profile.avg_cards_on_loss = 0.0; 
+
+    profile.avg_cards_on_loss = 0.0;
 
     return profile;
 }
@@ -347,24 +343,17 @@ void DatabaseManager::updateUserStatsIncrement(int userId, bool won, int cardsLe
     }
 
     auto u = *uopt;
-    
-    // INCREMENTAL UPDATE
+
     u.games_played++;
     if (won) {
         u.games_won++;
-    } else {
+    }
+    else {
         u.games_lost++;
     }
     u.hours_played_seconds += durationSeconds;
 
 
-    // Score Calculation (Keep doing this via scan for accuracy on averages, or simplify?)
-    // If we want to be purely incremental, we'd need to store total_lost_cards in User table. 
-    // For now, let's just re-scan for the score to keep it robust-ish, but TRUST the counters we just incremented.
-    // Actually, if we overwrite u.performance_score based on history scan, it might fluctuate if history is empty.
-    // Let's keep the existing scan logic for score, but DO NOT overwrite games_played/won/lost from history.
-    
-    // Get stats for avg cards calculation
     auto userSessions = storage().get_all<PlayerGameStats>(
         where(c(&PlayerGameStats::user_id) == userId)
     );
@@ -372,21 +361,21 @@ void DatabaseManager::updateUserStatsIncrement(int userId, bool won, int cardsLe
     long long sumCardsOnLoss = 0;
     int actualLossesInHistory = 0;
     for (const auto& p : userSessions) {
-         if (!p.won) {
-             sumCardsOnLoss += p.final_cards_in_hand;
-             actualLossesInHistory++;
-         }
+        if (!p.won) {
+            sumCardsOnLoss += p.final_cards_in_hand;
+            actualLossesInHistory++;
+        }
     }
 
-    double avgCardsOnLoss = (actualLossesInHistory > 0) 
-        ? static_cast<double>(sumCardsOnLoss) / actualLossesInHistory 
-        : (cardsLeft > 0 ? (double)cardsLeft : 0.0); // Fallback to current game if history empty
+    double avgCardsOnLoss = (actualLossesInHistory > 0)
+        ? static_cast<double>(sumCardsOnLoss) / actualLossesInHistory
+        : (cardsLeft > 0 ? (double)cardsLeft : 0.0);
 
     auto calcWinRate = [](int won, int played) -> double {
         return (played > 0) ? static_cast<double>(won) / played : 0.0;
-    };
+        };
 
-    double winRate = calcWinRate(u.games_won, u.games_played); // Use INCREMENTED values
+    double winRate = calcWinRate(u.games_won, u.games_played);
 
     auto scoreFromWinRate = [](double wr) {
         if (wr < 0.2) return 1;
@@ -394,7 +383,7 @@ void DatabaseManager::updateUserStatsIncrement(int userId, bool won, int cardsLe
         if (wr < 0.6) return 3;
         if (wr < 0.8) return 4;
         return 5;
-    };
+        };
 
     int score = scoreFromWinRate(winRate);
 
@@ -404,10 +393,11 @@ void DatabaseManager::updateUserStatsIncrement(int userId, bool won, int cardsLe
     u.performance_score = clampScore(score);
 
     storage().update(u);
-    
-    std::cout << "[Stats] Incremented user " << userId << ": games_played=" << u.games_played 
-              << ", games_won=" << u.games_won << ", games_lost=" << u.games_lost 
-              << ", performance_score=" << u.performance_score << std::endl;
+
+    std::cout << "[Stats] Incremented user " << userId << ": games_played=" << u.games_played
+        << ", games_won=" << u.games_won << ", games_lost=" << u.games_lost
+        << ", performance_score=" << u.performance_score 
+        << ", total_minutes_played=" << (u.hours_played_seconds / 60) << std::endl;
 }
 
 void DatabaseManager::addChatMessage(const ChatMessage& msg) {

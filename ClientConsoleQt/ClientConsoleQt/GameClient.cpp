@@ -39,11 +39,6 @@ bool GameClient::Login(const std::string& username, const std::string& password)
     }
 }
 
-// ... (skipping Register implementation from previous edit as it's separate)
-
-// ...
-
-
 bool GameClient::Register(const std::string& username, const std::string& password) {
     json regPayload = {
         {"username", username},
@@ -69,7 +64,7 @@ bool GameClient::JoinGame(int gameId) {
 
     if (response.status_code == 200) {
         auto data = json::parse(response.text);
-        m_gameId = gameId; // Use the requested ID
+        m_gameId = gameId; 
         m_playerIndex = data["playerIndex"].get<int>();
         m_isInGame = true;
         emit gameJoined(m_gameId);
@@ -90,7 +85,6 @@ bool GameClient::CreateGame(int maxPlayers) {
         int newGameId = data["gameId"];
         std::cout << "Created Game " << newGameId << std::endl;
         
-        // Auto-join the created game
         return JoinGame(newGameId);
     }
     std::cout << "Failed to create game: " << createResp.text << std::endl;
@@ -98,11 +92,8 @@ bool GameClient::CreateGame(int maxPlayers) {
 }
 
 bool GameClient::JoinAnyGame() {
-    // Try to find an existing game (e.g., game 0, 1, 2...)
-    // For now, let's try Game 0. If 404, we create one.
     if(JoinGame(0)) return true;
     
-    // If failed, create new
     return CreateGame(4);
 }
 
@@ -141,6 +132,21 @@ void GameClient::EndTurn() {
          PollGameState();
     } else {
         std::cout << "End turn failed: " << response.text << std::endl;
+    }
+}
+
+void GameClient::ForceWin() {
+    if (!m_isInGame) return;
+
+    std::string endpoint = "/game/" + std::to_string(m_gameId) + "/debug/win";
+    json payload = {};
+    auto response = m_network.Post(endpoint, payload);
+    
+    if(response.status_code == 200) {
+        std::cout << "Force Win triggered!" << std::endl;
+        PollGameState();
+    } else {
+        std::cout << "Force Win failed: " << response.text << std::endl;
     }
 }
 
@@ -206,7 +212,7 @@ bool GameClient::PollGameState() {
             m_currentState.won = data.value("won", false);
             m_currentState.currentPlayers = data.value("currentPlayers", 0);
             m_currentState.maxPlayers = data.value("maxPlayers", 0);
-            m_currentState.deckSize = data.value("deckCount", 98); // Parse deckCount to deckSize
+            m_currentState.deckSize = data.value("deckCount", 98); 
 
             int curIdx = data.value("currentPlayerIndex", -1);
             m_currentState.isMyTurn = (curIdx == m_playerIndex);
@@ -273,14 +279,16 @@ std::optional<GameClient::UserProfile> GameClient::GetUserProfile(int userId) {
             p.games_won = data.value("games_won", 0);
             p.games_lost = data.value("games_lost", 0);
             p.performance_score = data.value("performance_score", 1);
-            p.hours_played = data.value("hours_played", 0.0);
+
+            long long seconds = data.value("hours_played_seconds", 0);
+            p.total_minutes_played = seconds / 60;
             
             std::cout << "GetUserProfile: Parsed profile - username: " << p.username 
                       << ", games_played: " << p.games_played 
                       << ", games_won: " << p.games_won 
                       << ", games_lost: " << p.games_lost 
                       << ", performance_score: " << p.performance_score 
-                      << ", hours_played: " << p.hours_played << std::endl;
+                      << ", total_minutes_played: " << p.total_minutes_played << std::endl;
             
             return p;
         } catch (const std::exception& e) {

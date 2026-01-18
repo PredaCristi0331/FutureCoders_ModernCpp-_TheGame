@@ -14,14 +14,6 @@
 
 class GameClient;
 
-/**
- * LobbyWindow - Fereastra de lobby cu selecție dificultate
- * 
- * Permite utilizatorului să:
- * - Selecteze nivelul de dificultate (Ușor/Mediu/Greu)
- * - Caută un joc sau pornește un joc nou
- * - Vezi statusul de matchmaking
- */
 class LobbyWindow : public QWidget {
     Q_OBJECT
 
@@ -44,7 +36,7 @@ private slots:
     void onLogoutClicked();
     void onDifficultyChanged(int index);
     void onMatchmakingTimeout();
-    // Inline Slots
+    
     void toggleSettings();
     void onThemeChanged(int index);
 
@@ -53,7 +45,6 @@ private:
     QString currentUsername;
     QString selectedDifficulty;
 
-    // Widget-uri UI
     QLabel* welcomeLabel;
     QLabel* difficultyLabel;
     QComboBox* difficultyComboBox;
@@ -61,29 +52,26 @@ private:
     QLabel* numPlayersLabel;
     QComboBox* numPlayersComboBox;
 
-    // Buttons
     QPushButton* quickMatchButton;
     QPushButton* createGameButton;
-    QPushButton* joinIdButton; // Optional interaction
+    QPushButton* joinIdButton;
     
     QPushButton* profileButton;
     QPushButton* rulesButton;
     QPushButton* logoutButton;
     QLabel* statusLabel;
 
-    // Settings UI (Inline Commit 1)
     QWidget* settingsOverlay{nullptr};
     QCheckBox* soundToggle{nullptr};
     QCheckBox* musicToggle{nullptr};
     QComboBox* themeCombo{nullptr};
     QPushButton* closeSettingsBtn{nullptr};
-    QPushButton* settingsButton{nullptr}; // New button in main UI
+    QPushButton* settingsButton{nullptr};
 
-    // Waiting UI (Inline Commit 2)
     QWidget* waitingOverlay{nullptr};
     QLabel* waitingStatusLabel{nullptr};
-    QLabel* gameIdDisplayLabel{nullptr}; // New
-    QLabel* playerCountLabel{nullptr};   // New
+    QLabel* gameIdDisplayLabel{nullptr};
+    QLabel* playerCountLabel{nullptr};
     QPushButton* cancelWaitBtn{nullptr};
     QTimer* matchmakingTimer{nullptr};
 
@@ -96,5 +84,4 @@ private:
     void applyStyles();
     void connectSignals();
     void updateStatus(const QString& message, const QString& color);
-};//commit
-
+};

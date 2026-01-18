@@ -1,6 +1,6 @@
 #include "GameSessionManager.h"
 #include "RequestValidator.h"
-#include "../Database/Database/DatabaseManager.h" // For stats updates
+#include "../Database/Database/DatabaseManager.h"
 
 import GameTable;
 import Card;
@@ -9,17 +9,18 @@ import Player;
 
 namespace http
 {
-    // Helper to avoid duplication
     void FinishGameAndSaveStats(GameSession& session, bool won) {
-        if(session.status == "finished") return; // Already finished
+        if(session.status == "finished") return;
         
         std::cout << "[Referee] Finishing game " << session.gameId << " (Won: " << won << ")" << std::endl;
         session.status = "finished";
         session.won = won;
         
+        std::int64_t duration = (session.startTime > 0) ? (std::time(nullptr) - session.startTime) : 0;
+        
         try {
             DatabaseManager::finishSession(session.gameId, won, session.table->SizeDeckCards(), 
-                                           0, std::to_string(std::time(nullptr)), 0);
+                                           0, std::to_string(std::time(nullptr)), duration);
 
             for(int i=0; i<session.currentPlayers; ++i) {
                 std::string name = session.playerNames[i];
@@ -32,14 +33,12 @@ namespace http
                     int cardsInHand = static_cast<int>(session.table->GetGamer(i).GetCards().size());
                     s.final_cards_in_hand = cardsInHand;
                     s.moves_played = 0; 
-                    // Player wins if:
-                    // 1. Game is won overall (won=true) AND player has no cards left
-                    // 2. Otherwise, player loses
+
                     s.won = won && (cardsInHand == 0);
                     DatabaseManager::savePlayerStats(s);
-                    DatabaseManager::recomputeAndUpdateUserStats(u->id);
+                    DatabaseManager::updateUserStatsIncrement(u->id, s.won, cardsInHand, duration); 
                     std::cout << "[Stats] Player " << name << " (ID: " << u->id << "): won=" << s.won 
-                              << ", cardsInHand=" << cardsInHand << ", gameWon=" << won << std::endl;
+                              << ", cardsInHand=" << cardsInHand << ", gameWon=" << won << ", duration=" << duration << std::endl;
                 }
             }
         } catch (const std::exception& e) {
@@ -134,15 +133,14 @@ namespace http
         
         session.table->AddGamer(playerName);
 
-        // Auto-start if full
         if (session.currentPlayers == session.maxPlayers) {
             session.status = "playing";
-            session.table->SetNrGamer(session.currentPlayers); // Should match maxPlayers
+            session.startTime = std::time(nullptr);
+            session.table->SetNrGamer(session.currentPlayers);
             session.table->AddInitialCards();
             session.table->MixingDeckCards();
             session.table->IssuerCard();
             session.currentPlayerIndex = 0;
-            // Maybe notify or log
         }
 
         crow::json::wvalue response;
@@ -218,6 +216,7 @@ namespace http
         if(session.status != "waiting") return crow::response(400, "Game already started");
 
         session.status = "playing";
+        session.startTime = std::time(nullptr);
         
         session.table->SetNrGamer(session.currentPlayers);
         session.table->AddInitialCards();
@@ -227,10 +226,8 @@ namespace http
         session.currentPlayerIndex = 0;
         session.cardsPlayedThisTurn = 0;
         
-        // Check if first player is immediately blocked
         if (session.table->IsGameLost(0)) {
             FinishGameAndSaveStats(session, false);
-            // Even if finished immediately, we return "started" so client can poll and see "finished" + stats?
         }
 
         return crow::response(200, "Game started");
@@ -243,6 +240,28 @@ namespace http
         if (it == m_sessions.end()) return crow::response(404, "Game not found");
         it->second.status = "finished";
         return crow::response(200, "Game ended");
+    }
+
+    crow::response GameSessionManager::ForceWin(int gameId)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_sessions.find(gameId);
+        if (it == m_sessions.end()) return crow::response(404, "Game not found");
+        
+        GameSession& session = it->second;
+        if(session.status == "finished") return crow::response(200, "Already finished");
+
+        if(session.table) {
+            for(int i=0; i<session.currentPlayers; ++i) {
+                while(!session.table->GetGamer(i).GetCards().empty()) {
+                    auto c = session.table->GetGamer(i).GetCards().back();
+                    session.table->RemoveCardFromHand(i, c);
+                }
+            }
+        }
+        
+        FinishGameAndSaveStats(session, true);
+        return crow::response(200, "Game Force Won!");
     }
     
     crow::json::wvalue CardToJson(const game::Card& c) {
@@ -258,26 +277,18 @@ namespace http
         if (it == m_sessions.end()) return crow::response(404, "Game not found");
         
         const GameSession& session_const = it->second;
-        // Construct a non-const generic reference to update state if needed (Referee Logic)
         GameSession& session = it->second; 
         
         if (!session.table) return crow::response(500, "Game table not initialized");
 
-        // --- REFEREE LOGIC ---
-        // Check if the current player is blocked. If so, end the game immediately.
         if (session.status == "playing") {
              bool lost = session.table->IsGameLost(session.currentPlayerIndex);
-             // Debug log specific to this issue
-             // Only log once per second or so? No, let's just log if they are seemingly blocked but IsGameLost returns false? 
-             // Or just log "Referee checking player X: Lost=Y"
-             // std::cout << "Referee Check Player " << session.currentPlayerIndex << " (" << session.playerNames[session.currentPlayerIndex] << "): " << (lost ? "LOST" : "OK") << std::endl;
              
              if (lost) {
                   std::cout << "[Referee] DETECTED LOSS for player " << session.currentPlayerIndex << std::endl;
                   FinishGameAndSaveStats(session, false);
              }
         }
-        // ---------------------
 
         crow::json::wvalue response;
         response["status"] = session.status;
@@ -366,26 +377,12 @@ namespace http
             case 4: session.table->PushDecreasingSecond(card); break;
         }
         
-        // Increment cards played counter
         session.cardsPlayedThisTurn++;
 
-        // Check validation for winning
         if(session.table->IsGameWon()) {
              FinishGameAndSaveStats(session, true);
              return crow::response(200, "Game Won!");
         }
-        
-        // --- NO Auto-End Turn or Auto-Draw here anymore ---
-        // Player must explicitly call EndTurn or continue playing.
-        // Unless they have 0 cards? 
-        // Request says: "players draw card ONLY if they have no cards in hand"
-        // So if hand becomes empty after this move, we should Refill immediately?
-        // "jucatorii trag carte doar daca nu mai au carti in mana" -> "players draw card only if they have no cards in hand"
-        // This implies IF hand is empty, they draw. 
-        // Does this happen immediately or at end of turn?
-        // Usually "The Game" rules say you play until you want to stop.
-        // But if you HAVE NO CARDS, you must draw to continue or finish?
-        // Let's implement: If hand empty, REFILL IMMEDIATELY so they can continue or end.
         
         if (session.table->GetGamer(playerIndex).GetCards().empty()) {
              int targetHandSize = 6;
@@ -399,7 +396,6 @@ namespace http
             }
         }
 
-        // --- Check for Loss if blocked before minimum cards ---
         int minCards = (session.table->SizeDeckCards() > 0) ? 2 : 1;
         
         if (session.cardsPlayedThisTurn < minCards) {
@@ -407,22 +403,6 @@ namespace http
                 FinishGameAndSaveStats(session, false);
                 return crow::response(200, "Blocked before min cards... GAME OVER (Lost)");
             }
-        }
-        
-        // --- Auto-End Turn Logic (User Request: "After 2 moves turn MUST change") ---
-        
-        if (session.cardsPlayedThisTurn >= minCards) {
-             // Rotate Turn
-             session.cardsPlayedThisTurn = 0;
-             session.currentPlayerIndex = (session.currentPlayerIndex + 1) % session.currentPlayers;
-             
-             // Check if NEXT player has lost (blocked)
-             if(session.table->IsGameLost(session.currentPlayerIndex)) {
-                 FinishGameAndSaveStats(session, false);
-                 return crow::response(200, "Turn Ended. Next player blocked... GAME OVER (Lost)");
-             }
-             
-             return crow::response(200, "Move Accepted. Turn Ended (Limit Reached).");
         }
         
          return crow::response(200, "Move Accepted");
@@ -444,23 +424,14 @@ namespace http
              return crow::response(403, "Not your turn");
         }
         
-        // Validate Minimum Cards Played
         int minCards = (session.table->SizeDeckCards() > 0) ? 2 : 1;
         if (session.cardsPlayedThisTurn < minCards) {
-            // But wait, if they physically CANNOT play?
-            // "The Game" rules: If you cannot play min cards, you lose.
-            // So if they try to End Turn without playing enough, is it a Loss or just "Play more"?
-            // Usually "Play more". If they can't, it's a loss.
-            // Let's return error "Must play at least X cards".
-            // If they truly can't, they will be stuck and eventually leave or we handle "Give Up".
             return crow::response(400, "Must play at least " + std::to_string(minCards) + " cards.");
         }
 
-        // End Turn Logic
         session.cardsPlayedThisTurn = 0;
         session.currentPlayerIndex = (session.currentPlayerIndex + 1) % session.currentPlayers;
         
-        // Check if next player lost
         if(session.table->IsGameLost(session.currentPlayerIndex)) {
              FinishGameAndSaveStats(session, false);
              return crow::response(200, "Turn ended. Next player blocked... GAME OVER (Lost)");

@@ -8,7 +8,7 @@ CardWidget::CardWidget(int value, QWidget* parent)
     , m_value(value)
     , m_isSelected(false)
 {
-    setFixedSize(80, 120); // Standard card size
+    setFixedSize(80, 120);
     setCursor(Qt::PointingHandCursor);
     setupUI();
     updateStyle();
@@ -39,15 +39,14 @@ void CardWidget::setupUI() {
 
     m_valueLabel = new QLabel(QString::number(m_value), this);
     m_valueLabel->setAlignment(Qt::AlignCenter);
-    UI: // Small fix for label alignment if needed
+    UI: 
     
     layout->addWidget(m_valueLabel);
 }
 
 void CardWidget::updateStyle() {
-    // Dynamic styling based on selection
     QString borderColor = m_isSelected ? "#e94560" : "#0f3460";
-    QString bgColor = m_isSelected ? "#fcdab7" : "#eaeaea"; // Highlight vs Normal
+    QString bgColor = m_isSelected ? "#fcdab7" : "#eaeaea";
     QString textColor = "#1a1a2e";
 
     setStyleSheet(QString(

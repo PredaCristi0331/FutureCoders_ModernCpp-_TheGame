@@ -13,7 +13,6 @@ ClientConsoleQt::ClientConsoleQt(QWidget *parent)
     setMinimumSize(800, 600);
     resize(800, 600);
     
-    // Set WindowManager as central widget
     WindowManager* windowManager = new WindowManager(this);
     setCentralWidget(windowManager);
     windowManager->showLoginWindow();
@@ -22,4 +21,3 @@ ClientConsoleQt::ClientConsoleQt(QWidget *parent)
 ClientConsoleQt::~ClientConsoleQt()
 {
 }
-

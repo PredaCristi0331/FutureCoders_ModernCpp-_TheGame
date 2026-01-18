@@ -3,29 +3,20 @@
 #include <QTimer>
 #include <QFont>
 #include <QPalette>
+#include <regex>
 
 #include "GameClient.h"
 
 
-QSet<QString> LoginWindow::mockUsers;
-
 LoginWindow::LoginWindow(GameClient* client, QWidget* parent) 
     : QWidget(parent), gameClient(client) {
-    initializeMockUsers();
     setupUI();
     applyStyles();
 }
 
 LoginWindow::~LoginWindow() {}
 
-void LoginWindow::initializeMockUsers() {
-    if (mockUsers.isEmpty()) {
-        mockUsers.insert("test1");
-        mockUsers.insert("test2");
-        mockUsers.insert("admin");
-        mockUsers.insert("user123");
-    }
-}
+
 
 void LoginWindow::setupUI() {
 
@@ -155,6 +146,14 @@ bool LoginWindow::validateUsername(const QString& username) {
         messageLabel->show();
         return false;
     }
+
+    std::regex usernameRegex("^[a-zA-Z0-9_]+$");
+    if (!std::regex_match(trimmed.toStdString(), usernameRegex)) {
+        messageLabel->setText("Numele poate conține doar litere, cifre și _");
+        messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
+        messageLabel->show();
+        return false;
+    }
     
     return true;
 }
@@ -221,7 +220,6 @@ void LoginWindow::onRegisterClicked() {
     messageLabel->show();
     
     QTimer::singleShot(500, [this, username, password]() {
-        // Use real GameClient Register
         if (gameClient && gameClient->Register(username.toStdString(), password.toStdString())) {
             messageLabel->setText("Înregistrare reușită! Acum vă puteți autentifica.");
             messageLabel->setStyleSheet("color: #51cf66; font-size: 12px;");
@@ -238,4 +236,3 @@ void LoginWindow::onRegisterClicked() {
         }
     });
 }
-//commit

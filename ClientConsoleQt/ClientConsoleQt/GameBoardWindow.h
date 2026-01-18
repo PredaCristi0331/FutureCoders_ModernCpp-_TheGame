@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "GameState.h"
-#include "GameClient.h" // Need full definition for ChatMessage struct
+#include "GameClient.h"
 class CardWidget;
 class PileWidget;
 #include "PileWidget.h"
@@ -36,40 +36,36 @@ private slots:
     void onSendChatClicked();
     void onCardClicked(int value);
     void onPileClicked(PileType type);
-    void onChatUpdated(const std::vector<GameClient::ChatMessage>& messages); // New Slot
+    void onChatUpdated(const std::vector<GameClient::ChatMessage>& messages);
 
 private:
     GameClient* gameClient;
     QString currentUsername;
     int selectedHandIndex{-1};
     int selectedCardValue{-1}; 
-    int lastMessageId = 0; // Track chat history
+    int lastMessageId = 0;
 
-    // UI Areas
     QWidget* opponentsArea{nullptr};
     QWidget* pilesArea{nullptr};
     QWidget* handArea{nullptr};
     std::vector<CardWidget*> handCards;
     
-    // Chat UI (Commit 3)
     QListWidget* chatHistory{nullptr};
     QLineEdit* chatInput{nullptr};
     QPushButton* sendChatButton{nullptr};
 
-    // Piles
     std::vector<PileWidget*> piles;
     QLabel* deckLabel{nullptr};
     QLabel* cardsRemainingLabel{nullptr};
+    QPushButton* endTurnButton{nullptr};
 
-    // Opponents
     std::vector<OpponentWidget*> opponents;
 
     void setupUI();
     void setupChatUI(QVBoxLayout* rightLayout);
     void applyStyles();
-    void updateHandUI(); // Mock for now
+    void updateHandUI();
 
-    // Inline Commit 3: Notification Logic
     QLabel* turnLabel{nullptr};
     QLabel* notificationLabel{nullptr};
     void showNotification(const QString& message);

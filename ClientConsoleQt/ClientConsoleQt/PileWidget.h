@@ -20,7 +20,7 @@ public:
     int getTopCardValue() const { return topCardValue; }
     PileType getType() const { return type; }
 
-    void setHighlighted(bool highlighted); // For drag/drop feedback or selection
+    void setHighlighted(bool highlighted);
 
 signals:
     void clicked(PileType type);

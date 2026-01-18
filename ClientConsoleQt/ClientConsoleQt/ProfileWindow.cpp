@@ -34,8 +34,6 @@ void ProfileWindow::refreshStats() {
         return;
     }
 
-    // Fetch user profile from server
-    // Need userId first. GameClient has m_userId after Login.
     int userId = m_client->GetUserId();
     
     if (userId < 0) {
@@ -48,17 +46,16 @@ void ProfileWindow::refreshStats() {
     auto profile = m_client->GetUserProfile(userId);
 
     if (profile) {
-        // Calculate stars
         QString stars = "";
         for(int i=0; i<5; ++i) stars += (i < profile->performance_score ? "★" : "☆");
         
         statsLabel->setText(QString(
-            "Ore Jucate: %1\n"
+            "Minute Jucate: %1\n"
             "Scor Performanță: %2 (%3)\n"
             "Jocuri Jucate: %4\n"
             "Jocuri Câștigate: %5\n"
             "Jocuri Pierdute: %6"
-        ).arg(QString::number(profile->hours_played, 'f', 1))
+        ).arg(profile->total_minutes_played)
          .arg(profile->performance_score)
          .arg(stars)
          .arg(profile->games_played)
@@ -77,14 +74,12 @@ void ProfileWindow::setupUI() {
     mainLayout->setSpacing(20);
     mainLayout->setContentsMargins(40, 40, 40, 40);
 
-    // Title
     titleLabel = new QLabel("PROFIL JUCĂTOR", this);
     titleLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(titleLabel);
 
     mainLayout->addSpacing(20);
 
-    // User Info Container
     auto* infoLayout = new QVBoxLayout();
     infoLayout->setSpacing(15);
 
@@ -99,12 +94,10 @@ void ProfileWindow::setupUI() {
     mainLayout->addLayout(infoLayout);
     mainLayout->addStretch();
 
-    // Buttons
     backButton = new QPushButton("Înapoi la Lobby", this);
     backButton->setMinimumHeight(45);
     backButton->setCursor(Qt::PointingHandCursor);
     
-    // Centering the button
     auto* buttonLayout = new QHBoxLayout();
     buttonLayout->addStretch();
     buttonLayout->addWidget(backButton);
@@ -123,7 +116,7 @@ void ProfileWindow::applyStyles() {
         "    font-size: 16px;"
         "}"
         "QPushButton {"
-        "    background-color: #e94560;" // Different color for back button
+        "    background-color: #e94560;" // Different color
         "    color: white;"
         "    border: none;"
         "    border-radius: 8px;"
@@ -170,7 +163,6 @@ void ProfileWindow::onBackClicked() {
 
 void ProfileWindow::showEvent(QShowEvent* event) {
     QWidget::showEvent(event);
-    // Refresh stats when window is shown
     if (statsLabel && m_client) {
         refreshStats();
     }

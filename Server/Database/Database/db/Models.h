@@ -28,7 +28,7 @@ struct GameSession {
     std::string start_time;
     std::string end_time;
 
-    int status = 0; // 0=Waiting, 1=Running, 2=Finished
+    int status = 0;
 
     int num_players = 0;
     bool won = false;
