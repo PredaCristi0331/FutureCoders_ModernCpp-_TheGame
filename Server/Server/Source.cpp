@@ -169,8 +169,7 @@ int main()
     // Profile Endpoint
     CROW_ROUTE(app, "/user/<int>/profile")
         ([&](int userId) {
-            // 1. Force update stats
-            DatabaseManager::recomputeAndUpdateUserStats(userId);
+            
             
             // 2. Get Profile
             auto profile = DatabaseManager::getUserProfile(userId);

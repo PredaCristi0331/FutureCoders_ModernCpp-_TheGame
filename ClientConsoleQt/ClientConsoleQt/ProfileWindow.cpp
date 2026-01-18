@@ -53,12 +53,12 @@ void ProfileWindow::refreshStats() {
         for(int i=0; i<5; ++i) stars += (i < profile->performance_score ? "★" : "☆");
         
         statsLabel->setText(QString(
-            "Ore Jucate: %1\n"
+            "Minute Jucate: %1\n"
             "Scor Performanță: %2 (%3)\n"
             "Jocuri Jucate: %4\n"
             "Jocuri Câștigate: %5\n"
             "Jocuri Pierdute: %6"
-        ).arg(QString::number(profile->hours_played, 'f', 1))
+        ).arg(profile->total_minutes_played)
          .arg(profile->performance_score)
          .arg(stars)
          .arg(profile->games_played)

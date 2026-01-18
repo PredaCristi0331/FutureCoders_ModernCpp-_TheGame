@@ -273,14 +273,17 @@ std::optional<GameClient::UserProfile> GameClient::GetUserProfile(int userId) {
             p.games_won = data.value("games_won", 0);
             p.games_lost = data.value("games_lost", 0);
             p.performance_score = data.value("performance_score", 1);
-            p.hours_played = data.value("hours_played", 0.0);
+
+            int h = data.value("hours_played", 0);
+            int m = data.value("minutes_played", 0);
+            p.total_minutes_played = (h * 60) + m;
             
             std::cout << "GetUserProfile: Parsed profile - username: " << p.username 
                       << ", games_played: " << p.games_played 
                       << ", games_won: " << p.games_won 
                       << ", games_lost: " << p.games_lost 
                       << ", performance_score: " << p.performance_score 
-                      << ", hours_played: " << p.hours_played << std::endl;
+                      << ", total_minutes_played: " << p.total_minutes_played << std::endl;
             
             return p;
         } catch (const std::exception& e) {

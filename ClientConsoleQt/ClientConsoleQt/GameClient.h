@@ -39,7 +39,7 @@ public:
         int games_won;
         int games_lost;
         int performance_score;
-        double hours_played;
+        int total_minutes_played;
     };
     std::optional<UserProfile> GetUserProfile(int userId);
 

@@ -17,9 +17,11 @@ namespace http
         session.status = "finished";
         session.won = won;
         
+        std::int64_t duration = (session.startTime > 0) ? (std::time(nullptr) - session.startTime) : 0;
+        
         try {
             DatabaseManager::finishSession(session.gameId, won, session.table->SizeDeckCards(), 
-                                           0, std::to_string(std::time(nullptr)), 0);
+                                           0, std::to_string(std::time(nullptr)), duration);
 
             for(int i=0; i<session.currentPlayers; ++i) {
                 std::string name = session.playerNames[i];
@@ -37,9 +39,9 @@ namespace http
                     // 2. Otherwise, player loses
                     s.won = won && (cardsInHand == 0);
                     DatabaseManager::savePlayerStats(s);
-                    DatabaseManager::recomputeAndUpdateUserStats(u->id);
+                    DatabaseManager::updateUserStatsIncrement(u->id, s.won, cardsInHand, duration); 
                     std::cout << "[Stats] Player " << name << " (ID: " << u->id << "): won=" << s.won 
-                              << ", cardsInHand=" << cardsInHand << ", gameWon=" << won << std::endl;
+                              << ", cardsInHand=" << cardsInHand << ", gameWon=" << won << ", duration=" << duration << std::endl;
                 }
             }
         } catch (const std::exception& e) {
@@ -137,6 +139,7 @@ namespace http
         // Auto-start if full
         if (session.currentPlayers == session.maxPlayers) {
             session.status = "playing";
+            session.startTime = std::time(nullptr); // Track start time for auto-started games
             session.table->SetNrGamer(session.currentPlayers); // Should match maxPlayers
             session.table->AddInitialCards();
             session.table->MixingDeckCards();
@@ -218,6 +221,7 @@ namespace http
         if(session.status != "waiting") return crow::response(400, "Game already started");
 
         session.status = "playing";
+        session.startTime = std::time(nullptr); // Track start time
         
         session.table->SetNrGamer(session.currentPlayers);
         session.table->AddInitialCards();

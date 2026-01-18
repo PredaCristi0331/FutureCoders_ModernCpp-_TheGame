@@ -21,6 +21,7 @@ namespace http
         std::string status; // "waiting", "playing", "finished"
         bool won = false; // Result flag
         std::vector<std::string> playerNames;
+        std::time_t startTime = 0; // Added for duration tracking
         std::vector<int> playerIds; // Map index to database ID, if needed
         
         // Game Logic State
