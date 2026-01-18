@@ -3,6 +3,7 @@
 #include <QTimer>
 #include <QFont>
 #include <QPalette>
+#include <regex>
 
 #include "GameClient.h"
 
@@ -141,6 +142,14 @@ bool LoginWindow::validateUsername(const QString& username) {
     
     if (trimmed.length() < 3) {
         messageLabel->setText("Numele de utilizator trebuie să aibă minim 3 caractere!");
+        messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
+        messageLabel->show();
+        return false;
+    }
+
+    std::regex usernameRegex("^[a-zA-Z0-9_]+$");
+    if (!std::regex_match(trimmed.toStdString(), usernameRegex)) {
+        messageLabel->setText("Numele poate conține doar litere, cifre și _");
         messageLabel->setStyleSheet("color: #ff6b6b; font-size: 12px;");
         messageLabel->show();
         return false;
