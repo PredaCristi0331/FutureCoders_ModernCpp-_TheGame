@@ -16,17 +16,17 @@ private:
     std::vector<std::unique_ptr<Player>> players_;
     bool gameOver_;
 
-    // Lambda pentru callbacks
+    
     std::function<void(const std::string&)> onGameEvent_;
 
 public:
     Game();
 
-    // Move semantics
+    
     Game(Game&& other) noexcept = default;
     Game& operator=(Game&& other) noexcept = default;
 
-    // Delete copy
+    
     Game(const Game&) = delete;
     Game& operator=(const Game&) = delete;
 
@@ -46,13 +46,13 @@ public:
         onGameEvent_ = std::move(callback);
     }
 
-    // Variadic template pentru acțiuni multiple
+    
     template<typename... Actions>
     void executeActions(Actions&&... actions) {
         (std::forward<Actions>(actions)(), ...);
     }
 
-    // Ranges pentru interogări
+    
     [[nodiscard]] auto getActivePlayers() const {
         return players_
             | std::views::filter([](const auto& player) {

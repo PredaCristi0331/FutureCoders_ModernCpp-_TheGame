@@ -19,7 +19,7 @@ void Game::addPlayer(std::string name) {
 }
 
 void Game::startGame() {
-    // Deal initial cards (7 per player)
+    
     for (auto& player : players_) {
         for (int i = 0; i < 7; ++i) {
             if (auto card = deck_->drawCard()) {
@@ -53,12 +53,12 @@ bool Game::playCard(size_t playerIndex, size_t cardIndex, size_t pileIndex) {
     auto cardPtr = std::shared_ptr<Card>(std::move(*cardOpt));
 
     if (!pile.placeCard(cardPtr)) {
-        // Return card to player (would need to implement this properly)
+        
         Logger::getInstance().warning("Cannot place card on pile");
         return false;
     }
 
-    // Draw new card
+    
     if (auto newCard = deck_->drawCard()) {
         player->addCard(std::move(*newCard));
     }
@@ -75,7 +75,7 @@ bool Game::playCard(size_t playerIndex, size_t cardIndex, size_t pileIndex) {
 }
 
 bool Game::checkWinCondition() const {
-    // Win if deck is empty and all players have no cards
+   
     bool deckEmpty = deck_->isEmpty();
     bool allPlayersEmpty = std::ranges::all_of(players_,
         [](const auto& player) { return !player->hasCards(); });
@@ -86,7 +86,7 @@ bool Game::checkWinCondition() const {
 std::string Game::getGameState() const {
     std::string state = "=== Game State ===\n";
 
-    // Piles state
+   
     for (size_t i = 0; i < piles_.size(); ++i) {
         state += std::format("Pile {}: {} ({})\n",
             i,
@@ -94,10 +94,10 @@ std::string Game::getGameState() const {
             piles_[i].getType() == PileType::Ascending ? "ASC" : "DESC");
     }
 
-    // Deck state
+    
     state += std::format("\nDeck: {} cards remaining\n", deck_->size());
 
-    // Players state
+    
     state += "\nPlayers:\n";
     for (const auto& player : players_) {
         state += std::format("  {}: {} cards\n",

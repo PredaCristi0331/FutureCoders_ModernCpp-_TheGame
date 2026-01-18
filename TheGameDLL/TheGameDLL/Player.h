@@ -16,11 +16,11 @@ private:
 public:
     explicit Player(std::string name);
 
-    // Move semantics
+   
     Player(Player&& other) noexcept;
     Player& operator=(Player&& other) noexcept;
 
-    // Delete copy (unique ownership of cards)
+    
     Player(const Player&) = delete;
     Player& operator=(const Player&) = delete;
 
@@ -36,7 +36,7 @@ public:
 
     [[nodiscard]] std::vector<int> getHandValues() const;
 
-    // Template method cu ranges
+    
     template<typename Predicate>
     [[nodiscard]] auto findCards(Predicate pred) const {
         return hand_
