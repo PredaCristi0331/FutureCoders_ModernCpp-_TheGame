@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QPushButton>
 
-class GameClient; // Forward declaration
+class GameClient;
 
 class ProfileWindow : public QWidget {
     Q_OBJECT
@@ -15,7 +15,7 @@ public:
     ~ProfileWindow() override;
 
     void setUsername(const QString& username);
-    void refreshStats(); // New method
+    void refreshStats();
 
 signals:
     void backToLobby();
@@ -30,10 +30,9 @@ private:
     GameClient* m_client;
     QString currentUsername;
     
-    // UI Elements
     QLabel* titleLabel{nullptr};
     QLabel* usernameLabel{nullptr};
-    QLabel* statsLabel{nullptr}; // Mock stats
+    QLabel* statsLabel{nullptr};
     QPushButton* backButton{nullptr};
     
     void setupUI();

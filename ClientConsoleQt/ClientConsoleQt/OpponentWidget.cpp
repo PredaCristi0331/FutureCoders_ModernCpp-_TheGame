@@ -37,12 +37,10 @@ void OpponentWidget::setupUI() {
     auto* layout = new QVBoxLayout(this);
     layout->setAlignment(Qt::AlignCenter);
 
-    // Avatar Placeholder (Circle) + Name
     nameLabel = new QLabel(name, this);
     nameLabel->setAlignment(Qt::AlignCenter);
     nameLabel->setWordWrap(true);
 
-    // Card Count
     cardCountLabel = new QLabel(QString("%1 🂠").arg(cardCount), this);
     cardCountLabel->setAlignment(Qt::AlignCenter);
     cardCountLabel->setStyleSheet("font-size: 18px; color: #fab1a0;");
@@ -52,14 +50,14 @@ void OpponentWidget::setupUI() {
 }
 
 void OpponentWidget::updateStyle() {
-    QString bgColor = isActive ? "#2d3436" : "#2d3436"; // Darker bg
-    QString borderColor = isActive ? "#00b894" : "#636e72"; // Green if active
+    QString bgColor = isActive ? "#2d3436" : "#2d3436"; 
+    QString borderColor = isActive ? "#00b894" : "#636e72";
     
     setStyleSheet(QString(
         "OpponentWidget {"
         "    background-color: %1;"
         "    border: 2px solid %2;"
-        "    border-radius: 50px;" // Circle/Oval look
+        "    border-radius: 50px;" 
         "}"
         "QLabel {"
         "    color: #dfe6e9;"

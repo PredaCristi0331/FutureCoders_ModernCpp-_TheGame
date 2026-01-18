@@ -7,25 +7,15 @@
 #include "GameClient.h"
 
 
-QSet<QString> LoginWindow::mockUsers;
-
 LoginWindow::LoginWindow(GameClient* client, QWidget* parent) 
     : QWidget(parent), gameClient(client) {
-    initializeMockUsers();
     setupUI();
     applyStyles();
 }
 
 LoginWindow::~LoginWindow() {}
 
-void LoginWindow::initializeMockUsers() {
-    if (mockUsers.isEmpty()) {
-        mockUsers.insert("test1");
-        mockUsers.insert("test2");
-        mockUsers.insert("admin");
-        mockUsers.insert("user123");
-    }
-}
+
 
 void LoginWindow::setupUI() {
 
@@ -221,7 +211,6 @@ void LoginWindow::onRegisterClicked() {
     messageLabel->show();
     
     QTimer::singleShot(500, [this, username, password]() {
-        // Use real GameClient Register
         if (gameClient && gameClient->Register(username.toStdString(), password.toStdString())) {
             messageLabel->setText("Înregistrare reușită! Acum vă puteți autentifica.");
             messageLabel->setStyleSheet("color: #51cf66; font-size: 12px;");
@@ -238,4 +227,3 @@ void LoginWindow::onRegisterClicked() {
         }
     });
 }
-//commit

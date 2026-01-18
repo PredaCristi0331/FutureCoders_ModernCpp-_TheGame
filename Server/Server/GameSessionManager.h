@@ -44,6 +44,7 @@ namespace http
         crow::response GetAllGames();
         crow::response StartGame(int gameId);
         crow::response EndGame(int gameId);
+        crow::response ForceWin(int gameId); // Debug: Simulate Win
 
         // Gameplay methods
         crow::response PlayCard(int gameId, const crow::request& req);

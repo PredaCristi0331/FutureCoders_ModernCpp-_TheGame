@@ -109,6 +109,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\Server\$(Platform)\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,6 +140,17 @@
     <ClInclude Include="TestPlayer.h" />
     <ClInclude Include="TestRunner.h" />
     <ClInclude Include="TestUtils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClientConsoleQt\ClientConsoleQt\ClientConsoleQt.vcxproj">
+      <Project>{9c83468f-d824-4aef-83f2-56875e788f0c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Server\Database\Database\Database.vcxproj">
+      <Project>{7dcff2e8-a848-4a86-b84b-e0f80b1dc71c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Server\Server\Server.vcxproj">
+      <Project>{0c2f9e7e-59d3-4e51-ac71-0fa344fb6340}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -13,7 +13,7 @@ public:
 
     void setCardCount(int count);
     void setName(const QString& name);
-    void setActive(bool active); // Highlight if it's their turn
+    void setActive(bool active);
 
 protected:
     void paintEvent(QPaintEvent* event) override;

@@ -8,7 +8,7 @@ PileWidget::PileWidget(PileType type, QWidget* parent)
     , type(type)
     , topCardValue(type == PileType::Ascending_1_to_99 ? 1 : 100)
 {
-    setFixedSize(100, 140); // Slightly larger than cards
+    setFixedSize(100, 140);
     setCursor(Qt::PointingHandCursor);
     setupUI();
     updateStyle();
@@ -37,14 +37,12 @@ void PileWidget::setupUI() {
     auto* layout = new QVBoxLayout(this);
     layout->setAlignment(Qt::AlignCenter);
 
-    // Direction Icon
     iconLabel = new QLabel(this);
     iconLabel->setAlignment(Qt::AlignCenter);
     QString arrow = (type == PileType::Ascending_1_to_99) ? "▲" : "▼";
     QString range = (type == PileType::Ascending_1_to_99) ? "1 -> 99" : "100 -> 2";
     iconLabel->setText(arrow + "\n" + range);
 
-    // Value Label
     valueLabel = new QLabel(QString::number(topCardValue), this);
     valueLabel->setAlignment(Qt::AlignCenter);
     
@@ -58,17 +56,14 @@ void PileWidget::updateStyle() {
     QString borderColor = isHighlighted ? "#4ecdc4" : "#533483";
     QString textColor = "#eaeaea"; 
 
-    // Visual cue for pile type
     if (type == PileType::Ascending_1_to_99) {
-        // Reddish tint for Up
     } else {
-        // Blueish tint for Down
     }
 
     setStyleSheet(QString(
         "PileWidget {"
         "    background-color: %1;"
-        "    border: 3px dashed %2;" // Dashed to distinguish from hand cards
+        "    border: 3px dashed %2;"
         "    border-radius: 12px;"
         "}"
         "QLabel {"

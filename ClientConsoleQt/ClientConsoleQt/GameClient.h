@@ -18,11 +18,12 @@ public:
     bool CreateGame(int maxPlayers);
     bool JoinAnyGame();
     void PlayCard(int cardValue, int pileIndex);
-    void EndTurn(); // New method
+    void EndTurn();
+    void ForceWin();
     void DrawCards();
     void SendChat(const std::string& message);
     GameState GetGameState();
-    bool PollGameState(); // Returns true if state changed
+    bool PollGameState();
 
     struct ChatMessage {
         int id;
@@ -46,7 +47,7 @@ public:
     bool IsInGame() const { return m_isInGame; }
     int GetUserId() const { return m_userId; }
     int GetGameId() const { return m_gameId; }
-    void LeaveGame(); // Reset game state when leaving
+    void LeaveGame();
 
 signals:
     void loginSuccess(int userId);
@@ -58,7 +59,7 @@ signals:
 private:
     NetworkClient m_network;
     int m_userId = -1;
-    int m_playerIndex = -1; // Seat index in game (0-4)
+    int m_playerIndex = -1;
     int m_gameId = -1;
     bool m_isInGame = false;
     std::string m_username;

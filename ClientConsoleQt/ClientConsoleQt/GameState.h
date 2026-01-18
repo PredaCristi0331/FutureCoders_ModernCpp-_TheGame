@@ -19,7 +19,7 @@ struct PlayerInfo {
 
 struct GameState {
     int gameId;
-    std::vector<Pile> piles; // 4 piles: 2 asc, 2 desc
+    std::vector<Pile> piles; 
     std::vector<Card> hand;
     std::vector<PlayerInfo> otherPlayers;
     int deckSize;
@@ -27,7 +27,7 @@ struct GameState {
     int maxPlayers;
     bool isMyTurn;
     std::string currentPlayerName;
-    std::string status; // "waiting", "playing", "finished"
+    std::string status; 
     bool won = false; 
     std::vector<std::string> chatMessages;
 };

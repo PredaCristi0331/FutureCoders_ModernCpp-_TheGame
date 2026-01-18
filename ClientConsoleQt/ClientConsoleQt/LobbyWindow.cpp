@@ -11,10 +11,9 @@ LobbyWindow::LobbyWindow(GameClient* client, QWidget* parent)
     , matchmakingTimer(new QTimer(this))
 {
     setupUI();
-    setupSettingsUI(); // Init Settings
-    setupWaitingUI();  // Init Waiting
+    setupSettingsUI();
+    setupWaitingUI();
     
-    // Default hidden
     if(settingsOverlay) settingsOverlay->hide();
     if(waitingOverlay) waitingOverlay->hide();
 
@@ -34,19 +33,16 @@ void LobbyWindow::setUsername(const QString& username) {
     if (welcomeLabel) {
         welcomeLabel->setText(QString("Bine ai venit, %1!").arg(username));
     }
-    // Always hide waiting screen when setting username (e.g., when coming back from game)
     if (waitingOverlay) {
         hideWaitingScreen();
     }
 }
 
 void LobbyWindow::setupUI() {
-    // Layout principal
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(30);
     mainLayout->setContentsMargins(50, 50, 50, 50);
 
-    // Titlu de bun venit
     welcomeLabel = new QLabel("Bine ai venit!", this);
     welcomeLabel->setAlignment(Qt::AlignCenter);
     QFont titleFont("Arial", 24, QFont::Bold);
@@ -55,7 +51,6 @@ void LobbyWindow::setupUI() {
 
     mainLayout->addStretch();
 
-    // Selector dificultate
     QVBoxLayout* difficultyLayout = new QVBoxLayout();
     difficultyLayout->setSpacing(10);
 
@@ -73,7 +68,6 @@ void LobbyWindow::setupUI() {
 
     mainLayout->addLayout(difficultyLayout);
 
-    // Selector Nr Jucatori
     QVBoxLayout* playersLayout = new QVBoxLayout();
     playersLayout->setSpacing(10);
     
@@ -85,28 +79,25 @@ void LobbyWindow::setupUI() {
     numPlayersComboBox = new QComboBox(this);
     numPlayersComboBox->addItem("2 Jucători");
     numPlayersComboBox->addItem("3 Jucători");
-    numPlayersComboBox->addItem("4 Jucători"); // If 4 is maxSupported, or add 5 if rules allow
+    numPlayersComboBox->addItem("4 Jucători");
     numPlayersComboBox->addItem("5 Jucători");
     numPlayersComboBox->setMinimumHeight(45);
-    numPlayersComboBox->setCurrentIndex(0); // Default 2
+    numPlayersComboBox->setCurrentIndex(0);
     playersLayout->addWidget(numPlayersComboBox);
     
     mainLayout->addLayout(playersLayout);
 
-    // Butoane
     QVBoxLayout* buttonLayout = new QVBoxLayout();
     buttonLayout->setSpacing(15);
 
-    // 1. Join Game
     quickMatchButton = new QPushButton("Join Game", this);
     quickMatchButton->setMinimumHeight(45);
-    quickMatchButton->setStyleSheet("background-color: #27ae60; font-weight: bold;"); // Green
+    quickMatchButton->setStyleSheet("background-color: #27ae60; font-weight: bold;");
     buttonLayout->addWidget(quickMatchButton);
 
-    // 2. Create Game
     createGameButton = new QPushButton("Crează Joc", this);
     createGameButton->setMinimumHeight(45);
-    createGameButton->setStyleSheet("background-color: #2980b9; font-weight: bold;"); // Blue
+    createGameButton->setStyleSheet("background-color: #2980b9; font-weight: bold;");
     buttonLayout->addWidget(createGameButton);
 
     profileButton = new QPushButton("Profil", this);
@@ -117,13 +108,11 @@ void LobbyWindow::setupUI() {
     rulesButton = new QPushButton("Regulament", this);
     rulesButton->setMinimumHeight(45);
     rulesButton->setMinimumWidth(200);
-    // Style specific
-    rulesButton->setStyleSheet("background-color: #0f3460;"); // Distinct color
+    rulesButton->setStyleSheet("background-color: #0f3460;");
     buttonLayout->addWidget(rulesButton);
 
     buttonLayout->addWidget(rulesButton);
     
-    // Add small Settings button near Rules
     settingsButton = new QPushButton("⚙ Setări", this);
     settingsButton->setMinimumHeight(45);
     settingsButton->setStyleSheet("background-color: #2d3436; color: #dfe6e9;");
@@ -136,7 +125,6 @@ void LobbyWindow::setupUI() {
 
     mainLayout->addLayout(buttonLayout);
 
-    // Status label
     statusLabel = new QLabel(this);
     statusLabel->setAlignment(Qt::AlignCenter);
     statusLabel->setWordWrap(true);
@@ -211,14 +199,12 @@ void LobbyWindow::applyStyles() {
         "}"
     );
 
-    // Stilizare titlu
     welcomeLabel->setStyleSheet(
         "color: #533483;"
         "background-color: transparent;"
         "font-size: 24px;"
     );
 
-    // Stilizare label dificultate
     difficultyLabel->setStyleSheet(
         "color: #eaeaea;"
         "font-size: 16px;"
@@ -270,7 +256,6 @@ void LobbyWindow::onCreateGameClicked() {
     updateStatus("Se crează joc...", "#f39c12");
     
     QTimer::singleShot(100, [this](){
-        // Get selected player count: index 0 -> 2 players, 1 -> 3 players...
         int players = numPlayersComboBox->currentIndex() + 2; 
         
         if(gameClient->CreateGame(players)) {
@@ -286,10 +271,8 @@ void LobbyWindow::onCreateGameClicked() {
 
 
 void LobbyWindow::onMatchmakingTimeout() {
-    // Joc găsit - emite semnal pentru a începe jocul
     updateStatus("Joc găsit! Pornire joc...", "#51cf66");
     
-    // Așteaptă puțin apoi emite semnalul
     QTimer::singleShot(1000, [this]() {
         emit startGame(currentUsername, selectedDifficulty);
     });
@@ -314,10 +297,9 @@ void LobbyWindow::updateStatus(const QString& message, const QString& color) {
     statusLabel->show();
 }
 
-// --- Inline Commit 1: Settings Logic ---
 void LobbyWindow::setupSettingsUI() {
     settingsOverlay = new QWidget(this);
-    settingsOverlay->setGeometry(rect()); // Cover entire window
+    settingsOverlay->setGeometry(rect());
     settingsOverlay->setStyleSheet("background-color: rgba(0,0,0,0.85);");
     
     auto* layout = new QVBoxLayout(settingsOverlay);
@@ -366,24 +348,21 @@ void LobbyWindow::toggleSettings() {
     if (settingsOverlay->isVisible()) {
         settingsOverlay->hide();
     } else {
-        settingsOverlay->setGeometry(rect()); // Ensure it covers updated size
+        settingsOverlay->setGeometry(rect());
         settingsOverlay->show();
         settingsOverlay->raise();
     }
 }
 
 void LobbyWindow::onThemeChanged(int index) {
-    // Mock theme implementation
     if (index == 1) {
-       // Light Mode Mock
     }
 }
 
-// --- Inline Commit 2: Waiting Logic ---
 void LobbyWindow::setupWaitingUI() {
     waitingOverlay = new QWidget(this);
     waitingOverlay->setGeometry(rect());
-    waitingOverlay->setStyleSheet("background-color: #1a1a2e;"); // Solid cover
+    waitingOverlay->setStyleSheet("background-color: #1a1a2e;");
     
     auto* layout = new QVBoxLayout(waitingOverlay);
     layout->setAlignment(Qt::AlignCenter);
@@ -416,12 +395,10 @@ void LobbyWindow::showWaitingScreen() {
     waitingOverlay->show();
     waitingOverlay->raise();
     
-    // Set static info
     gameIdDisplayLabel->setText(QString("Game ID: %1").arg(gameClient->GetGameId()));
     
     disconnect(matchmakingTimer, nullptr, nullptr, nullptr);
     connect(matchmakingTimer, &QTimer::timeout, [this]() {
-        // Poll Server
         if (gameClient->PollGameState()) {
             GameState state = gameClient->GetGameState();
             
@@ -430,14 +407,13 @@ void LobbyWindow::showWaitingScreen() {
                                       .arg(state.maxPlayers));
 
             if (state.status == "playing") {
-                 onMatchmakingTimeout(); // Reuse start logic
+                 onMatchmakingTimeout();
                  return;
             }
         }
     });
-    matchmakingTimer->start(1000); // Poll every second
+    matchmakingTimer->start(1000);
     
-    // Initial poll
     gameClient->PollGameState();
 }
 
@@ -447,6 +423,5 @@ void LobbyWindow::hideWaitingScreen() {
     quickMatchButton->setEnabled(true);
     createGameButton->setEnabled(true);
     profileButton->setEnabled(true);
-    settingsButton->setEnabled(true); // Re-enable
+    settingsButton->setEnabled(true);
 }
-

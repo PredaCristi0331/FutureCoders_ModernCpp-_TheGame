@@ -1,4 +1,5 @@
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
+#include <filesystem>
 
 #include <iostream>
 import TheGame;
@@ -36,7 +37,7 @@ int main()
 
     // Initialize Database
     DatabaseManager::init("game.db");
-    http::Logger::Log(http::Logger::Level::INFO, "Database initialized at game_v3.db");
+    http::Logger::Log(http::Logger::Level::INFO, "Database initialized at: " + std::filesystem::absolute("game.db").string());
 
     // Chat
     http::ChatHeandler chat;
@@ -180,7 +181,7 @@ int main()
             json["games_won"] = profile.games_won;
             json["games_lost"] = profile.games_lost;
             json["performance_score"] = profile.performance_score;
-            json["hours_played"] = profile.hours_played_seconds / 3600.0; // Send as hours
+            json["hours_played_seconds"] = profile.hours_played_seconds;
             
             crow::response response(200, json);
             http::CorsMiddleware::AddCorsHeaders(response);
@@ -200,6 +201,11 @@ int main()
     CROW_ROUTE(app, "/game/<int>/start").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req, int gameId) {
         return gameManager.StartGame(gameId);
+            });
+
+    CROW_ROUTE(app, "/game/<int>/debug/win").methods(crow::HTTPMethod::POST)
+        ([&](const crow::request& req, int gameId) {
+        return gameManager.ForceWin(gameId);
             });
 
     CROW_ROUTE(app, "/games")

@@ -248,6 +248,39 @@ namespace http
         it->second.status = "finished";
         return crow::response(200, "Game ended");
     }
+
+    crow::response GameSessionManager::ForceWin(int gameId)
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        auto it = m_sessions.find(gameId);
+        if (it == m_sessions.end()) return crow::response(404, "Game not found");
+        
+        GameSession& session = it->second;
+        if(session.status == "finished") return crow::response(200, "Already finished");
+
+        // Validate table exists
+        if(session.table) {
+            // Empty all hands and devk to ensure win condition logic in database saving works for everyone
+            // Assuming we want everyone to get the win
+            // We can't easily "clear" private members of GameTable/Player without adding methods, 
+            // but we can cheat or add methods. 
+            // Better to rely on "won=true" passed to FinishGameAndSaveStats.
+            
+            // Actually, FinishGameAndSaveStats checks (cardsInHand == 0) for each player to assign individual win.
+            // So we MUST clear the hands in the memory model if we want them to get the win stats.
+            
+            // Hacky way: Just consume all cards from players
+            for(int i=0; i<session.currentPlayers; ++i) {
+                while(!session.table->GetGamer(i).GetCards().empty()) {
+                    auto c = session.table->GetGamer(i).GetCards().back();
+                    session.table->RemoveCardFromHand(i, c);
+                }
+            }
+        }
+        
+        FinishGameAndSaveStats(session, true);
+        return crow::response(200, "Game Force Won!");
+    }
     
     crow::json::wvalue CardToJson(const game::Card& c) {
         crow::json::wvalue j;
@@ -415,6 +448,7 @@ namespace http
         
         // --- Auto-End Turn Logic (User Request: "After 2 moves turn MUST change") ---
         
+        /* Auto-End Turn Logic REMOVED for manual End Turn support
         if (session.cardsPlayedThisTurn >= minCards) {
              // Rotate Turn
              session.cardsPlayedThisTurn = 0;
@@ -428,6 +462,7 @@ namespace http
              
              return crow::response(200, "Move Accepted. Turn Ended (Limit Reached).");
         }
+        */
         
          return crow::response(200, "Move Accepted");
     }
