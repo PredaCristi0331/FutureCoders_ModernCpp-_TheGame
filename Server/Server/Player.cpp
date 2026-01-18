@@ -8,12 +8,18 @@ game::Player::Player(const std::string& name):m_name(name)
 	m_cards.push_back(-1);
 }
 
-void game::Player::SetId(int id) {
-	m_id = id;
+game::Player::Player(Player&& other) noexcept
+	: m_name(std::move(other.m_name)), m_cards(std::move(other.m_cards))
+{
 }
 
-int game::Player::GetId() {
-	return m_id;
+game::Player& game::Player::operator=(Player&& other) noexcept
+{
+	if (this != &other) {
+		m_name = std::move(other.m_name);
+		m_cards = std::move(other.m_cards);
+	}
+	return *this;
 }
 
 std::string game::Player::GetName() const
@@ -26,25 +32,11 @@ void game::Player::SetName(std::string name)
 	m_name = name;
 }
 
-void game::Player::SetCards(std::vector<Card> cards)
-{
-	m_cards = cards;
-}
-
 void game::Player::AddCard(Card cardDrawn)
 {
 	if (m_cards.size() == 1 && m_cards[0] == -1)
 		m_cards[0] = cardDrawn;
 	else this->m_cards.push_back(cardDrawn);
-}
-
-Card game::Player::returnCard(int numberCard)
-{
-	for (int i = 0; i < m_cards.size(); i++) {
-		if (m_cards[i].GetCardNumber() == numberCard)
-			return m_cards[i];
-	}
-	return Card(-1);
 }
 
 std::vector<Card>& game::Player::GetCards()
@@ -55,27 +47,6 @@ std::vector<Card>& game::Player::GetCards()
 const std::vector<Card>& game::Player::GetCards() const
 {
 	return this->m_cards;
-}
-
-void game::Player::ShowCards()
-{
-	for (int i = 0; i < m_cards.size(); i++) {
-		std::cout << m_cards[i].GetCardNumber() << " ";
-	}
-}
-
-Card game::Player::CardLaidDown(int card)
-{
-	auto it = std::find_if(m_cards.begin(), m_cards.end(),
-		[card](const Card& c) { return c.GetCardNumber() == card; });
-
-	if (it == m_cards.end())
-		throw std::runtime_error("Card not found");
-
-	Card result = *it;
-	m_cards.erase(it);
-
-	return result;
 }
 
 void game::Player::RemoveCard(Card card)

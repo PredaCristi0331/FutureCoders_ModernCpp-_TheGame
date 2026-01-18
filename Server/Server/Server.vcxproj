@@ -140,7 +140,6 @@
     <ClCompile Include="ChatHeandler.cpp" />
     <ClCompile Include="ChatMessage.cpp" />
     <ClCompile Include="ChatMessage.cppm" />
-    <ClCompile Include="ChatStorage.cpp" />
     <ClCompile Include="GameSessionManager.cpp" />
     <ClCompile Include="GameTable.cpp" />
     <ClCompile Include="GameTable.cppm" />
@@ -148,13 +147,10 @@
     <ClCompile Include="Player.cppm" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="src\sqlite3.c" />
-    <ClCompile Include="TheGame.cpp" />
-    <ClCompile Include="TheGame.cppm" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AuthHandler.h" />
     <ClInclude Include="ChatHeandler.h" />
-    <ClInclude Include="ChatStorage.h" />
     <ClInclude Include="GameSessionManager.h" />
   </ItemGroup>
   <ItemGroup>

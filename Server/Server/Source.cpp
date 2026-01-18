@@ -1,16 +1,9 @@
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 #include <filesystem>
 
-#include <iostream>
-import TheGame;
 
-//int main() {
-//	using namespace game;
-//	TheGame gaming;
-//	gaming.StartTheGame();
-//	gaming.Rund();
-//	return 0;
-//}
+#include <iostream>
+
 
 #include <crow.h>
 #include "../Database/Database/DatabaseManager.h"
@@ -35,11 +28,9 @@ int main()
 
     http::Logger::Log(http::Logger::Level::SUCCESS, "Server starting on port 18080...");
 
-    // Initialize Database
     DatabaseManager::init("game.db");
     http::Logger::Log(http::Logger::Level::INFO, "Database initialized at: " + std::filesystem::absolute("game.db").string());
 
-    // Chat
     http::ChatHeandler chat;
     
     http::GameSessionManager gameManager;
@@ -51,13 +42,11 @@ int main()
 
     http::Logger::Log(http::Logger::Level::INFO, "All handlers initialized successfully");
 
-    // CORS preflight endpoint
     CROW_ROUTE(app, "/<path>").methods(crow::HTTPMethod::OPTIONS)
         ([&](std::string path) -> crow::response {
         return http::CorsMiddleware::HandlePreflight();
             });
 
-    // Auth endpoints
     CROW_ROUTE(app, "/auth/register").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
         http::RequestTimer timer("/auth/register");
@@ -106,7 +95,6 @@ int main()
         return response;
             });
 
-    // Chat endpoints
     CROW_ROUTE(app, "/chat").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
         http::RequestTimer timer("/chat");
@@ -122,7 +110,6 @@ int main()
         return chat.GetMessages(static_cast<int>(gameId));
             });
 
-    // Game session endpoints
     CROW_ROUTE(app, "/game/create").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req) {
         http::RequestTimer timer("/game/create");
@@ -134,7 +121,6 @@ int main()
             });
 
 
-    // Join game endpoint
     CROW_ROUTE(app, "/game/<int>/join").methods(crow::HTTPMethod::POST)
         ([&](const crow::request& req, int gameId) {
         http::RequestTimer timer("/game/join");
@@ -167,12 +153,10 @@ int main()
         return response;
             });
 
-    // Profile Endpoint
     CROW_ROUTE(app, "/user/<int>/profile")
         ([&](int userId) {
             
             
-            // 2. Get Profile
             auto profile = DatabaseManager::getUserProfile(userId);
             
             crow::json::wvalue json;
@@ -190,8 +174,6 @@ int main()
 
     CROW_ROUTE(app, "/game/<int>/state")
         ([&](const crow::request& req, int gameId) -> crow::response {
-         // Get userId from query param for now, e.g. ?userId=0
-         // In real app, from Token/Auth
          char* userParam = req.url_params.get("userId");
          int userId = userParam ? std::stoi(userParam) : -1;
          
@@ -213,13 +195,11 @@ int main()
         return gameManager.GetAllGames();
             });
 
-    // Health check endpoint
     CROW_ROUTE(app, "/health")
         ([&]() -> crow::response {
         return healthCheck.GetHealth();
             });
 
-    // Server stats endpoint
     CROW_ROUTE(app, "/stats")
         ([&]() -> crow::response {
         http::RequestTimer timer("/stats");
@@ -230,7 +210,6 @@ int main()
         return response;
             });
 
-    // API version endpoint
     CROW_ROUTE(app, "/api/version")
         ([&]() -> crow::response {
         http::RequestTimer timer("/api/version");

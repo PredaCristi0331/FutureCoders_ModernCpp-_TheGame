@@ -3,13 +3,11 @@
   <ItemGroup>
     <ClCompile Include="DatabaseManager.cpp" />
     <ClCompile Include="db\sqlite_orm\sqlite3.c" />
-    <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DatabaseManager.h" />
     <ClInclude Include="db\Models.h" />
     <ClInclude Include="db\sqlite_orm\sqlite3.h" />
     <ClInclude Include="db\sqlite_orm\sqlite_orm.h" />
-    <ClInclude Include="Statistics.h" />
   </ItemGroup>
 </Project>

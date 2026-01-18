@@ -6,14 +6,14 @@
 #include <sstream>
 #include <iomanip>
 #include <functional>
-#include "../Database/Database/DatabaseManager.h" // Includes db/Models.h
+#include "../Database/Database/DatabaseManager.h"
 
 namespace http
 {
     class AuthHandler
     {
     private:
-        std::map<std::string, std::string> m_tokens; // token -> username
+        std::map<std::string, std::string> m_tokens;
         std::mutex m_mutex;
 
         std::string GenerateToken(const std::string& username);
@@ -24,9 +24,6 @@ namespace http
         crow::response Logout(const crow::request& req);
         bool ValidateToken(const std::string& token);
 
-        // Helper not strictly needed if DB handles it, but maybe useful?
-        // std::string HashPassword(const std::string& password); 
-        
         crow::response GetProfile(const std::string& token);
     };
 }

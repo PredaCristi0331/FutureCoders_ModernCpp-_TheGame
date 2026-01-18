@@ -75,10 +75,6 @@ namespace
                 foreign_key(&ChatMessage::game_session_id).references(&GameSession::id).on_delete.cascade(),
                 foreign_key(&ChatMessage::user_id).references(&User::id).on_delete.cascade()
             )
-
-            // make_index("idx_pgs_user", &PlayerGameStats::user_id),
-            // make_index("idx_pgs_session", &PlayerGameStats::game_session_id)
-            // make_index("idx_chat_session", &ChatMessage::game_session_id)
         );
 
 
@@ -331,7 +327,7 @@ UserProfile DatabaseManager::getUserProfile(int userId) {
     profile.games_lost = uopt->games_lost;
     profile.performance_score = uopt->performance_score;
 
-    // avg_cards_on_loss is not stored in Users table and not used in UI currently.
+
     profile.avg_cards_on_loss = 0.0;
 
     return profile;
@@ -348,7 +344,6 @@ void DatabaseManager::updateUserStatsIncrement(int userId, bool won, int cardsLe
 
     auto u = *uopt;
 
-    // INCREMENTAL UPDATE
     u.games_played++;
     if (won) {
         u.games_won++;
@@ -359,13 +354,6 @@ void DatabaseManager::updateUserStatsIncrement(int userId, bool won, int cardsLe
     u.hours_played_seconds += durationSeconds;
 
 
-    // Score Calculation (Keep doing this via scan for accuracy on averages, or simplify?)
-    // If we want to be purely incremental, we'd need to store total_lost_cards in User table. 
-    // For now, let's just re-scan for the score to keep it robust-ish, but TRUST the counters we just incremented.
-    // Actually, if we overwrite u.performance_score based on history scan, it might fluctuate if history is empty.
-    // Let's keep the existing scan logic for score, but DO NOT overwrite games_played/won/lost from history.
-
-    // Get stats for avg cards calculation
     auto userSessions = storage().get_all<PlayerGameStats>(
         where(c(&PlayerGameStats::user_id) == userId)
     );
@@ -381,13 +369,13 @@ void DatabaseManager::updateUserStatsIncrement(int userId, bool won, int cardsLe
 
     double avgCardsOnLoss = (actualLossesInHistory > 0)
         ? static_cast<double>(sumCardsOnLoss) / actualLossesInHistory
-        : (cardsLeft > 0 ? (double)cardsLeft : 0.0); // Fallback to current game if history empty
+        : (cardsLeft > 0 ? (double)cardsLeft : 0.0);
 
     auto calcWinRate = [](int won, int played) -> double {
         return (played > 0) ? static_cast<double>(won) / played : 0.0;
         };
 
-    double winRate = calcWinRate(u.games_won, u.games_played); // Use INCREMENTED values
+    double winRate = calcWinRate(u.games_won, u.games_played);
 
     auto scoreFromWinRate = [](double wr) {
         if (wr < 0.2) return 1;

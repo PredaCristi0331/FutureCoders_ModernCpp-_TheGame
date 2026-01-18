@@ -105,7 +105,7 @@ namespace http
         crow::json::wvalue response;
         response["username"] = username;
         response["token"] = token;
-        response["userId"] = userOpt->id;  // Include userId in response
+        response["userId"] = userOpt->id;
         response["status"] = "logged_in";
         response["message"] = "Login successful";
 
@@ -158,7 +158,6 @@ namespace http
         response["games_lost"] = profile.games_lost;
         response["performance_score"] = profile.performance_score;
         
-        // Convert seconds to hours for display (double)
         response["hours_played"] = static_cast<double>(profile.hours_played_seconds) / 3600.0;
         
         return crow::response(200, response);

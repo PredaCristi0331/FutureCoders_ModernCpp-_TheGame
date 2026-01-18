@@ -144,14 +144,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DatabaseManager.cpp" />
-    <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DatabaseManager.h" />
     <ClInclude Include="db\Models.h" />
     <ClInclude Include="db\sqlite_orm\sqlite3.h" />
     <ClInclude Include="db\sqlite_orm\sqlite_orm.h" />
-    <ClInclude Include="Statistics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
