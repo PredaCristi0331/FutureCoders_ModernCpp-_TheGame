@@ -2,108 +2,102 @@ Link video attached:
 
 https://github.com/user-attachments/assets/28aa4a0a-f35b-40f4-832f-e09f5ebedd74
 
-Jocul The Game reprezintă un joc cooperativ de cărți în care participanții colaborează pentru a plasa toate cele 98 de cărți numerotate de la 2 la 99 în patru teancuri distincte, respectând reguli stricte de ordonare: două teancuri în ordine crescătoare și două în ordine descrescătoare. Obiectivul colectiv constă în utilizarea tuturor cărților, situație în care echipa câștigă și „învinge” jocul.
+The Game is a cooperative card game in which participants collaborate to place all 98 cards numbered from 2 to 99 in four distinct piles, respecting strict ordering rules: two piles in ascending order and two in descending order. The collective objective is to use all the cards, in which case the team wins and "beats" the game.
 
+Starting from the concept of the game, it is proposed to implement an application that respects the following fundamental rules:
 
+Structure of the deck of cards
 
+There are two categories of cards:
 
+4 foundation cards (two with the value "1" and two with the value "100"), which constitute the foundations of the four piles and cannot be distributed to the players;
 
+98 cards numbered from 2 to 99, which will be handled exclusively by the players.
 
+Game configuration
 
-Pornind de la conceptul jocului, se propune implementarea unei aplicații care să respecte următoarele reguli fundamentale:
+A game can be started with a minimum of 2 and a maximum of 5 players.
 
-Structura pachetului de cărți
+In the setup phase:
 
-Există două categorii de cărți:
+The four foundation cards are placed face up in plain sight.
 
-4 cărți fundament (două având valoarea „1” și două având valoarea „100”), care constituie bazele celor patru teancuri și nu pot fi distribuite jucătorilor;
+The deck of 98 cards is shuffled, then a number of cards are dealt to each player, depending on the number of participants:
 
-98 de cărți numerotate de la 2 la 99, care vor fi manipulate exclusiv de jucători.
+2 players: 8 cards/player
 
-Configurarea jocului
+3 players: 7 cards/player
 
-Un joc poate fi inițiat cu minimum 2 și maximum 5 jucători.
+4–5 players: 6 cards/player
 
-În faza de pregătire:
+The remaining cards form the draw pile, placed face down.
 
-Cele patru cărți fundament sunt plasate vizibil, cu fața în sus.
+How the game is played
 
-Teancul celor 98 de cărți este amestecat, apoi se distribuie un număr de cărți fiecărui jucător, în funcție de numărul participanților:
+The game is played in turns, so that each player plays once per round. During their turn:
 
-2 jucători: câte 8 cărți/jucător
+The player must play at least two cards (one after the draw pile is exhausted), placing them on one or more of the four piles.
 
-3 jucători: câte 7 cărți/jucător
+Cards are placed one by one, following the ordering rules:
 
-4–5 jucători: câte 6 cărți/jucător
+Ascending stacks (starting at "1"): each new card must be larger than the previous one.
 
-Cărțile rămase formează teancul de tragere, plasat cu fața în jos.
+Descending stacks (starting at "100"): each new card must be smaller than the previous one.
 
-Desfășurarea jocului
+"Backwards Trick" exception
 
-Jocul se desfășoară în ture, astfel încât fiecare jucător joacă o dată pe rundă. În cadrul propriului tur:
+A controlled deviation from the ordering rules is allowed to increase flexibility:
 
-Jucătorul trebuie să joace cel puțin două cărți (una singură după epuizarea teancului de tragere), plasându-le pe unul sau mai multe dintre cele patru teancuri.
+A card exactly 10 units smaller than the current card can be placed on an ascending stack.
 
-Cărțile se plasează una câte una, respectând regulile de ordonare:
+A card exactly 10 units larger than the current card can be placed on a descending stack.
 
-Teancuri ascendente (începând de la „1”): fiecare carte nouă trebuie să fie mai mare decât cea precedentă.
+After placing the cards, the player draws from the draw pile a number of cards equal to the number of those played, thus restoring the initial size of his hand. After the draw pile is exhausted, each player is required to play at least one card per turn.
 
-Teancuri descendente (începând de la „100”): fiecare carte nouă trebuie să fie mai mică decât cea precedentă.
+Ending conditions
 
-Excepția „Backwards Trick” / „Trucul invers”
+The game ends in two ways:
 
-Se permite o deviere controlată de la regulile de ordine pentru a crește flexibilitatea:
+Failure: A player cannot place the minimum number of cards allowed in his turn.
 
-Pe un teanc ascendent se poate plasa o carte cu exact 10 unități mai mică decât cartea curentă.
+Victory: All 98 cards have been placed in the piles validly.
 
-Pe un teanc descendent se poate plasa o carte cu exact 10 unități mai mare decât cartea curentă.
+Communication rules
 
-După plasarea cărților, jucătorul extrage din teancul de tragere un număr de cărți egal cu numărul celor jucate, restabilindu-și astfel mărimea inițială a mâinii. După epuizarea teancului de tragere, fiecare jucător este obligat să joace cel puțin o singură carte per tur.
+Players can communicate via chat, but without revealing the exact values ​​of the cards in their hand. Communication must be indirect, for example:
 
-Condiții de finalizare
+"Avoid playing on the first pile."
 
-Jocul se încheie în două moduri:
+"I have some good options for the second pile."
 
-Eșec: Un jucător nu poate plasa numărul minim de cărți permise în turul său.
+User profile
 
-Victorie: Toate cele 98 de cărți au fost plasate în teancuri în mod valid.
+The application will include a user profile containing:
 
-Reguli de comunicare
+the total number of hours played,
 
-Jucătorii pot comunica prin intermediul unui chat, însă fără a dezvălui valorile exacte ale cărților din mână. Comunicarea trebuie să fie indirectă, de exemplu:
+a performance score (1–5), calculated on the ratio of games played, games won, and the number of cards remaining in the players' hands at the end of lost games,
 
-„Evitați să jucați pe primul teanc.”
+other elements considered relevant.
 
-„Am câteva opțiuni bune pentru teancul doi.”
+Basic technical requirements
 
-Profilul utilizatorului
+Client–server architecture: the application must allow the running of at least two client instances and one server instance, using the HTTP protocol and the CROW library.
 
-Aplicația va include un profil de utilizator conținând:
+Login/Register page: users can log in or create an account using a unique username (email/password are optional).
 
-numărul total de ore jucate,
+Game page: the main application will work in the console, fully respecting the rules of the game.
 
-un scor de performanță (1–5), calculat asupra raportului dintre jocurile jucate, cele câștigate și numărul de cărți rămase în mâna jucătorilor la finalul jocurilor pierdute,
+Database: data will be managed using the SQLite ORM library.
 
-alte elemente considerate relevante.
+Advanced components 
 
-Cerințe tehnice de bază
+Multigaming: support for multiple games simultaneously. Players are automatically distributed into games based on score; a user can wait a maximum of 30 seconds, after which the game starts if there are at least two participants.
 
-Arhitectură client–server: aplicația trebuie să permită rularea a minimum două instanțe de client și o instanță de server, utilizând protocolul HTTP și biblioteca CROW.
+Graphical interface (GUI): implementation of a customized graphical interface, different from the original version of the game.
 
-Pagina de Login/Register: utilizatorii se pot autentifica sau își pot crea cont folosind un nume de utilizator unic (emailul/parola sunt opționale).
+Recommended optional elements
 
-Pagina jocului: aplicația principală va funcționa în consolă, respectând integral regulile jocului.
+Introducing difficulty levels (easy, medium, hard), selectable at the start of the game or dynamically adjusted.
 
-Bază de date: datele vor fi gestionate utilizând biblioteca SQLite ORM.
-
-Componente avansate (2 puncte)
-
-Multigaming: suport pentru mai multe jocuri simultan. Jucătorii sunt distribuiți automat în jocuri în funcție de scor; un utilizator poate aștepta maximum 30 de secunde, după care jocul pornește dacă există cel puțin doi participanți.
-
-Interfață grafică (GUI): implementarea unei interfețe grafice personalizate, diferită de versiunea originală a jocului.
-
-Elemente opționale recomandate
-
-Introducerea unor niveluri de dificultate (ușor, mediu, greu), selectabile la începutul jocului sau ajustate dinamic.
-
-Implementarea tratării riguroase a excepțiilor și realizarea de teste unitare utilizând framework-uri dedicate (minim 40 de teste sau acoperire de cod ≥50%).
+Implementing rigorous exception handling and performing unit tests using dedicated frameworks (minimum 40 tests or ≥50% code coverage).
