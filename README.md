@@ -1,4 +1,14 @@
+Link video attached:
+
+https://github.com/user-attachments/assets/28aa4a0a-f35b-40f4-832f-e09f5ebedd74
+
 Jocul The Game reprezintă un joc cooperativ de cărți în care participanții colaborează pentru a plasa toate cele 98 de cărți numerotate de la 2 la 99 în patru teancuri distincte, respectând reguli stricte de ordonare: două teancuri în ordine crescătoare și două în ordine descrescătoare. Obiectivul colectiv constă în utilizarea tuturor cărților, situație în care echipa câștigă și „învinge” jocul.
+
+
+
+
+
+
 
 Pornind de la conceptul jocului, se propune implementarea unei aplicații care să respecte următoarele reguli fundamentale:
 
