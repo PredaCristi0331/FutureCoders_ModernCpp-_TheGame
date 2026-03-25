@@ -1,0 +1,22 @@
+[
+  {
+    "Name": "Cars",
+    "Words": ["FERRARI", "LAMBORGHINI", "PORSCHE", "BUGATTI", "MERCEDES", "TOYOTA", "HONDA", "FORD", "TESLA", "VOLKSWAGEN"]
+  },
+  {
+    "Name": "Movies",
+    "Words": ["INCEPTION", "TITANIC", "AVATAR", "MATRIX", "GLADIATOR", "INTERSTELLAR", "JOKER", "PARASITE", "GRAVITY", "DUNKIRK"]
+  },
+  {
+    "Name": "Rivers",
+    "Words": ["AMAZON", "DANUBE", "VOLGA", "MISSISSIPPI", "NILE", "GANGES", "YANGTZE", "COLORADO", "THAMES", "RHINE"]
+  },
+  {
+    "Name": "Animals",
+    "Words": ["ELEPHANT", "GIRAFFE", "PENGUIN", "DOLPHIN", "CHEETAH", "GORILLA", "KANGAROO", "CROCODILE", "FLAMINGO", "PORCUPINE"]
+  },
+  {
+    "Name": "Countries",
+    "Words": ["FRANCE", "GERMANY", "JAPAN", "BRAZIL", "AUSTRALIA", "CANADA", "ARGENTINA", "PORTUGAL", "ROMANIA", "NORWAY"]
+  }
+]
